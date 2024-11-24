@@ -21,11 +21,11 @@ services:
     restart: always
     volumes:
     - ./logstash/:/logstash_dir
-    command: logstash -f /logstash_dir/logstash.conf 
+    command: logstash - /logstash_dir/logstash.conf 
     depends_on:
       - Elasticsearch
     ports:
-    - '9600:9600'
+      - '9600:9600'
     environment:
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"    
     networks:
@@ -36,13 +36,26 @@ services:
     container_name: kibana
     restart: always       
     ports:
-    - '5601:5601'
+      - '5601:5601'
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200  
     depends_on:
       - Elasticsearch  
     networks:
       - elk
+
+  Conf:                                                                         
+    image: debian:bullseye-slim                                                 
+    container_name: conf                                                        
+    depends_on:                                                                 
+      - Kibana                                                                  
+    volumes:                                                                    
+      - ./conf:/conf                                                            
+    entrypoint: ["bash", "/conf/configure.sh"]                                  
+    restart: "no"                                                               
+    networks:                                                                   
+      - elk     
+
 volumes:
   elastic_data: {}
 

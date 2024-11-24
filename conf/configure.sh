@@ -52,3 +52,8 @@ curl -X POST "http://kibana:5601/api/saved_objects/_import" \
 -H "kbn-xsrf: true" \
 -F file=@/conf/kibana_export.ndjson
 
+# Config Kafka:
+echo 'Stating Kafka Configuration'
+pip install kafka-python
+python3 /conf/kafka_config.py
+echo 'Ending Kafka Configuration'

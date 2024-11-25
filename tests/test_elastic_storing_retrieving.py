@@ -22,6 +22,5 @@ if response["_source"] == DOC_BODY:
 else:
     print(f"Failed to retrieve document {DOC_ID}.")
 
-if __name__ == "__main__":
-    test_elastic()
+es.transport.close()
 

@@ -28,6 +28,11 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - elk
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   Elasticsearch:
     image: elasticsearch:7.16.2
@@ -72,18 +77,24 @@ services:
       - Elasticsearch  
     networks:
       - elk
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601/api/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   Conf:                                                                         
     image: python:3.9
-    container_name: conf                                                        
-    depends_on:                                                                 
-      - Kibana                                                                  
+    container_name: conf                                                              
     volumes:                                                                    
       - ./conf:/conf                                                            
     entrypoint: ["bash", "/conf/configure.sh"]                                  
     restart: "no"                                                               
     networks:                                                                   
       - elk     
+    depends_on:
+      Kibana:
+        condition: service_healthy
 
   test:
     build:
@@ -94,6 +105,31 @@ services:
     volumes:
       - ./tests:/app/tests
     restart: "no"
+    networks:
+      - elk
+      
+  my-fastapi-app:
+    build:
+      context: ./my-fastapi-app
+    container_name: my-fastapi-app
+    ports:
+      - "8000:8000"
+    depends_on:
+      Kibana:
+        condition: service_healthy
+    volumes:
+      - ./my-fastapi-app:/app
+    networks:
+      - elk
+      
+  process_raw_to_cleaned:
+    build:
+      context: ./process_raw_to_cleaned
+    container_name: process_raw_to_cleaned
+    depends_on:
+      - my-fastapi-app
+    volumes:
+      - ./process_raw_to_cleaned:/app
     networks:
       - elk
 

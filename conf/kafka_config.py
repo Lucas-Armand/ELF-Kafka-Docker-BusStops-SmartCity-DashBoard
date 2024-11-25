@@ -7,7 +7,7 @@ admin = KafkaAdminClient(
 topics_list = admin.list_topics()
 # Admin logic
 
-topics = ['bus','van','weather']
+topics = ['bus','van','weather','bus_raw','van_raw','weather_raw']
 
 for topic in topics:
     if topic not in topics_list:

@@ -35,4 +35,5 @@ if hits:
     print(f"Mensagem encontrada no Elasticsearch: {hits[0]['_source']}")
 else:
     print("Mensagem NÃO encontrada no Elasticsearch. Verifique o Logstash.")
+es.transport.close()
 

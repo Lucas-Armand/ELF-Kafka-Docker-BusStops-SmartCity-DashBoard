@@ -51,10 +51,10 @@ payloads = [
 def test_fastapi_produce(url, payload):
     """Testa o endpoint POST /produce"""
     try:
-        # Envia a requisição POST
+        # Send the POST request
         response = requests.post(url, json=payload)
         
-        # Verifica se a resposta é 200 OK
+        # Check if the response is 200 OK
         assert response.status_code == 200, f"Status code inesperado: {response.status_code}"
         print("Resposta da API:", response.json())
         print("Teste concluído com sucesso!")

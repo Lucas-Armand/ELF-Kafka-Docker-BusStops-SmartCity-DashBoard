@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Instale as dependências necessárias
+# Install required dependencies
 RUN apt-get update 
 RUN pip install datetime
 RUN pip install kafka-python

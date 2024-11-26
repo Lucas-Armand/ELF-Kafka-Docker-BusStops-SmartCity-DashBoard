@@ -8,25 +8,25 @@ ELASTIC_HOST = "http://elasticsearch:9200"
 TOPIC = "bus"
 INDEX_NAME = "bus"
     
-# Configurar o produtor Kafka
+# Send mensage direct to Kafka:
 producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER)
 
-# Mensagem de teste
 test_message = {
     "bus_id": "TEST_BUS",
     "location": {"lat": 45.5017, "lon": -73.5673},
     "timestamp": "2024-11-23T10:00:00Z",
-    "event_type":"bus"
+    "type":"bus",
+    "occupancyStatus": "FEW_SEATS_AVAILABLE"       
 }
 
 producer.send(TOPIC, value=str(test_message).encode("utf-8"))
 producer.flush()
 print(f"Mensagem enviada para o tópico Kafka: {TOPIC}")
 
-# Esperar que o Logstash processe a mensagem
-time.sleep(10)  # Aguarde alguns segundos para que a mensagem seja processada
+# Wait for Logstash to process the message
+time.sleep(10)  
 
-# Verificar no Elasticsearch
+# Check if the changes were reflected in the Elasticsearch database:
 es = Elasticsearch(ELASTIC_HOST)
 result = es.search(index=INDEX_NAME, query={"match": {"bus_id": "TEST_BUS"}})
 hits = result["hits"]["hits"]

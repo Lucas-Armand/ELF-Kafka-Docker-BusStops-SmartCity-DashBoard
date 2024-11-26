@@ -14,25 +14,25 @@ def mock_data(df):
     df['temperature'] = np.random.normal(df['temp_mean'], 0.3)
 
     df = df.drop(columns=['temp_mean'])
-    
+
     # Generate weather in the point
     df['weather'] = np.random.choice(['Rain', 'Snow', 'Strong Rain'], size=len(df), p=[0.6, 0.2, 0.2])
-    
+
     # Generate the number of persons wainting
     df['waiting_size'] = np.random.exponential(scale=4, size=len(df)).astype(int)
-    
+
     # Generate the number of persons wainting
     df['percentile_waiting_size']= np.random.normal(loc=80, scale=30, size=len(df))
 
     # Add flood detected
-    random_row = np.random.randint(0, len(data))
+    random_row = np.random.randint(0, len(df))
     df['flood_detected'] = False
     df.loc[random_row, 'flood_detected'] = True
     df.loc[random_row, 'weather'] = 'Strong Rain'
-    
+
     # Add expected wait time to next bus
     df['expected_wait_time_next_bus'] = np.random.normal(loc=5, scale=5, size=len(df))
-    
+
     return df
 
 
@@ -52,11 +52,13 @@ def test_fastapi_produce(url, payload):
 
 df_stop = pd.read_csv('./stops.txt')
 df_stop = mock_data(df_stop)
+df_stop = df_stop.drop(columns=['stop_url', 'parent_station'])
 
 # URL da API FastAPI
 url = "http://my-fastapi-app:8000/stop_update"
 
-for i,x in df_stop.iterrows():
+for i, x in df_stop.iterrows():
+    print(x.to_dict())
     test_fastapi_produce(url, x.to_dict())
 
 

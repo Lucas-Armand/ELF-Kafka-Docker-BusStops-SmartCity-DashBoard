@@ -33,18 +33,39 @@ curl -X PUT "http://elasticsearch:9200/van?pretty" \
   }
 }'
 
-curl -X PUT "http://elasticsearch:9200/weather_station?pretty" \
+curl -X PUT "http://elasticsearch:9200/stop_station?pretty" \
 -H "Content-Type: application/json" \
 -d '{
   "mappings": {
     "properties": {
-      "location": {"type": "geo_point"},
-      "temp": {"type": "float"},
-      "precipitation": {"type": "keyword"},
-      "timestamp": {"type": "date"}
+      "location": {
+        "type": "geo_point"
+      },
+      "temperature": {
+        "type": "float"
+      },
+      "weather": {
+        "type": "keyword"
+      },
+      "waiting_size": {
+        "type": "float"
+      },
+      "percentile_waiting_size": {
+        "type": "float"
+      },
+      "flood_detected": {
+        "type": "boolean"
+      },
+      "expected_wait_time_next_bus": {
+        "type": "float"
+      },
+      "timestamp": {
+        "type": "date"
+      }
     }
   }
 }'
+
 
 
 # Kibana Import API: https://www.elastic.co/guide/en/kibana/current/saved-objects-api-import.html

@@ -2,19 +2,24 @@ from kafka import KafkaConsumer, KafkaProducer
 import json
 
 KAFKA_BROKER = "kafka:9092"
-RAW_TOPIC = "bus_raw"
-PROCESSED_TOPIC = "bus"
+RAW_TOPIC = "stop_raw"
+PROCESSED_TOPIC = "stop"
 
 
-def process_bus_raw_to_bus_format(data):
+def process_stop_raw_to_stop_format(data):
     transformed_data = {
-        "bus_id": data["vehicle"]["id"],
-        "event_type": "bus",
         "location": {
-            "lat": data["position"]["latitude"],
-            "lon": data["position"]["longitude"]
+            "lat": data["stop_lat"],
+            "lon": data["stop_lon"]
         },
-        "timestamp": data["timestamp"]
+        "temperature": data["temperature"],
+        "weather": data["weather"],
+        "waiting_size": data["waiting_size"],
+        "percentile_waiting_size": data["percentile_waiting_size"],
+        "flood_detected": data["flood_detected"],
+        "expected_wait_time_next_bus": data["expected_wait_time_next_bus"],
+        "type": "stop_station",
+        "stop_id": data["stop_id"]
     }
     return transformed_data
 
@@ -26,7 +31,7 @@ def main(producer, consumer):
             raw_data = data.value
             print(f"Received data: {raw_data}")
 
-            transformed_data = process_bus_raw_to_bus_format(raw_data)
+            transformed_data = process_stop_raw_to_stop_format(raw_data)
             print(f"Transformed: {transformed_data}")
 
             producer.send(PROCESSED_TOPIC, value=transformed_data)

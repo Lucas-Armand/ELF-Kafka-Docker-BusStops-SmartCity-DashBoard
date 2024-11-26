@@ -122,14 +122,36 @@ services:
     networks:
       - elk
       
-  process_raw_to_cleaned:
+  process_raw_to_cleaned_bus:
     build:
-      context: ./process_raw_to_cleaned
-    container_name: process_raw_to_cleaned
+      context: ./process_raw_to_cleaned_bus
+    container_name: process_raw_to_cleaned_bus
     depends_on:
       - my-fastapi-app
     volumes:
-      - ./process_raw_to_cleaned:/app
+      - ./process_raw_to_cleaned_bus:/app
+    networks:
+      - elk
+      
+  process_raw_to_cleaned_stops:
+    build:
+      context: ./process_raw_to_cleaned_stops
+    container_name: process_raw_to_cleaned_stops
+    depends_on:
+      - my-fastapi-app
+    volumes:
+      - ./process_raw_to_cleaned_stops:/app
+    networks:
+      - elk
+      
+  process_raw_to_cleaned_vans:
+    build:
+      context: ./process_raw_to_cleaned_vans
+    container_name: process_raw_to_cleaned_vans
+    depends_on:
+      - my-fastapi-app
+    volumes:
+      - ./process_raw_to_cleaned_vans:/app
     networks:
       - elk
 

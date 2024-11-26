@@ -1,4 +1,5 @@
 from elasticsearch import Elasticsearch
+import json
 
 ELASTIC_HOST = "http://elasticsearch:9200"
 INDEX_NAME = "test-index"

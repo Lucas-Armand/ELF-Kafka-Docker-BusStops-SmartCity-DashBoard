@@ -43,16 +43,14 @@ This project leverages the Elasticsearch, Logstash, Kibana (ELK Stack), and Kafk
 ### **Steps to Run**
 1. Clone the repository:
    ```bash
-   git clone https://github.com/<your-username>/smart-mobility-system.git
+   git clone https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard.git
    cd smart-mobility-system
    ```
 
-   
 2. Build and run the Docker containers:
    ```bash
    docker-compose up --build
    ```
-
 
 3. Access the FastAPI Swagger UI for testing APIs:
    ```bash

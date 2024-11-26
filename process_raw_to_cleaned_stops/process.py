@@ -41,7 +41,7 @@ def main(producer, consumer):
             print(f"Error processing: {e}")
 
 
-# Configurar o consumidor Kafka
+# Configure consumer
 consumer = KafkaConsumer(
     RAW_TOPIC,
     bootstrap_servers=KAFKA_BROKER,
@@ -51,7 +51,7 @@ consumer = KafkaConsumer(
     group_id='stop_processor_group'
 )
 
-# Configurar o produtor Kafka
+# Configure producer
 producer = KafkaProducer(
     bootstrap_servers=KAFKA_BROKER,
     value_serializer=lambda v: json.dumps(v).encode('utf-8')

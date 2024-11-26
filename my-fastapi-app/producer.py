@@ -3,11 +3,9 @@ from fastapi import FastAPI
 from kafka import KafkaProducer
 from datetime import datetime
 
-
 KAFKA_BROKER = "kafka:9092"
 
 app = FastAPI()
-
 
 ## Config Kafka
 producer = KafkaProducer(
@@ -16,7 +14,7 @@ producer = KafkaProducer(
 )
 
    
-# Função para salvar os eventos em um arquivo de texto
+# Function to save events in a text file
 def save_to_file(data, file_path="vehicle_positions.txt"):
     with open(file_path, "a") as file:
         file.write(f"{datetime.now()} - {data}\n")

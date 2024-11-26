@@ -70,7 +70,7 @@ The project includes a **test** Docker container to validate each component. To 
 
 1. Run the **test** container:
     ```bash
-    docker run -it test
+    docker-compose run test
     ```
 
 2. Inside the container, execute individual tests:

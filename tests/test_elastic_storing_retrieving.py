@@ -7,15 +7,15 @@ DOC_BODY = {"message": "Test Elasticsearch integration"}
 
 es = Elasticsearch(ELASTIC_HOST)
 
-# Cria um índice
+# Create an index
 es.indices.create(index=INDEX_NAME, ignore=400)
 print(f"Index '{INDEX_NAME}' created.")
 
-# Indexa um documento
+# Index a document
 es.index(index=INDEX_NAME, id=DOC_ID, document=DOC_BODY)
 print(f"Document {DOC_ID} indexed.")
 
-# Verifica se o documento foi salvo
+# Check if the document has been saved
 response = es.get(index=INDEX_NAME, id=DOC_ID)
 if response["_source"] == DOC_BODY:
     print(f"Document {DOC_ID} retrieved successfully.")

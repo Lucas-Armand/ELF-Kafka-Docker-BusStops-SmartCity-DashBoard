@@ -2,6 +2,7 @@
 
 apt-get update && apt-get install -y curl
 
+# Wait Kibana if needed
 until curl -s -X GET "http://kibana:5601/api/status" -H 'kbn-xsrf: true' | grep -q '"state":"green"'; do
   echo 'Kibana is not ready...'
   sleep 5

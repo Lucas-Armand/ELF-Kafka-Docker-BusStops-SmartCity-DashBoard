@@ -44,7 +44,7 @@ This project uses Elasticsearch, Logstash, Kibana (ELK Stack), and Kafka, orches
 1. Clone the repository:
    ```bash
    git clone https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard.git
-   cd smart-mobility-system
+   cd ELF-Kafka-Docker-BusStops-SmartCity-DashBoard
    ```
 
 2. Build and run the Docker containers:

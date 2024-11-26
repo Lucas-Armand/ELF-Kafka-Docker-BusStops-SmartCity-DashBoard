@@ -1,6 +1,7 @@
 
 from kafka import KafkaProducer
 from elasticsearch import Elasticsearch
+import json
 import time
         
 KAFKA_BROKER = "kafka:9092"

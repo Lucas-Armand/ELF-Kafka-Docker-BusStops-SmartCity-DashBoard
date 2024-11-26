@@ -50,8 +50,9 @@ def process_vehicle_postions(url_kafka):
             test_fastapi_produce(url_kafka, payload)
 
 
-get_vehicle_positions(url_stm)
-process_vehicle_postions(url_kafka)
+if __name__ == "__main__":
+    get_vehicle_positions(url_stm)
+    process_vehicle_postions(url_kafka)
 
 
 

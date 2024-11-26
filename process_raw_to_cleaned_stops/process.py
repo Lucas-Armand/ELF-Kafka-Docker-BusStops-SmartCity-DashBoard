@@ -48,7 +48,7 @@ consumer = KafkaConsumer(
     value_deserializer=lambda v: json.loads(v.decode('utf-8')),
     auto_offset_reset='earliest',
     enable_auto_commit=True,
-    group_id='bus_processor_group'
+    group_id='stop_processor_group'
 )
 
 # Configurar o produtor Kafka

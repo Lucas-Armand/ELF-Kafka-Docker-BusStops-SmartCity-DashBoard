@@ -49,3 +49,17 @@ async def stop_update(event: dict):
         print(f"Failed to publish message: {e}")
     
     return {"status": "Message attempted"}
+
+
+@app.post("/van_update")
+async def van_update(event: dict):
+    print(f"Attempting to publish message: {event}")
+    
+    try:
+        producer.send('van_raw', value=event)
+        producer.flush()
+        print("Message successfully published")
+    except Exception as e:
+        print(f"Failed to publish message: {e}")
+    
+    return {"status": "Message attempted"}

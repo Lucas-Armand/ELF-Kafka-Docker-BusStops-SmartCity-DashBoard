@@ -6,7 +6,7 @@ RAW_TOPIC = "van_raw"
 PROCESSED_TOPIC = "van"
 
 
-def process_bus_raw_to_bus_format(data):
+def process_van_raw_to_van_format(data):
     transformed_data = {
         "van_id": data["id"],
         "type": "van",
@@ -26,7 +26,7 @@ def main(producer, consumer):
             raw_data = data.value
             print(f"Received data: {raw_data}")
 
-            transformed_data = process_bus_raw_to_bus_format(raw_data)
+            transformed_data = process_van_raw_to_van_format(raw_data)
             print(f"Transformed: {transformed_data}")
 
             producer.send(PROCESSED_TOPIC, value=transformed_data)
@@ -43,7 +43,7 @@ consumer = KafkaConsumer(
     value_deserializer=lambda v: json.loads(v.decode('utf-8')),
     auto_offset_reset='earliest',
     enable_auto_commit=True,
-    group_id='bus_processor_group'
+    group_id='van_processor_group'
 )
 
 # Configurar o produtor Kafka

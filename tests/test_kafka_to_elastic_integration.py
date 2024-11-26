@@ -8,7 +8,7 @@ ELASTIC_HOST = "http://elasticsearch:9200"
 TOPIC = "bus"
 INDEX_NAME = "bus"
     
-    # Configurar o produtor Kafka
+# Configurar o produtor Kafka
 producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER)
 
 # Mensagem de teste

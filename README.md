@@ -4,10 +4,9 @@ This is a modern data streaming, visualization, and real-time monitoring project
 
 This project leverages the Elasticsearch, Logstash, Kibana (ELK Stack), and Kafka, orchestrated with Docker, to create a scalable and modular architecture. The solution enables real-time data ingestion, processing, and visualization, providing critical insights for managing public transportation and urban mobility.
 
----
 
 ## **Architecture**
-![System Architecture](#) <!-- Replace with your architecture image -->
+![System Architecture](https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard/blob/main/img/architecture.png?raw=true) <!-- Replace with your architecture image -->
 
 ### **Components**
 1. **FastAPI**:
@@ -29,8 +28,6 @@ This project leverages the Elasticsearch, Logstash, Kibana (ELK Stack), and Kafk
 5. **Kibana/Custom Dashboard**:
    - A dashboard for visualizing actionable insights, such as delays or van service requirements.
 
----
-
 ## **Technologies Used**
 
 - **Programming Language**: Python 3.9+
@@ -40,8 +37,6 @@ This project leverages the Elasticsearch, Logstash, Kibana (ELK Stack), and Kafk
 - **Visualization**: Kibana
 - **API Framework**: FastAPI
 - **Containerization**: Docker and Docker Compose
-
----
 
 ## **Setup**
 

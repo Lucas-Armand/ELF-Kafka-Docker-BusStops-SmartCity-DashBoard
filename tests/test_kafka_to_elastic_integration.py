@@ -9,7 +9,10 @@ TOPIC = "bus"
 INDEX_NAME = "bus"
     
 # Send mensage direct to Kafka:
-producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER)
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
 
 test_message = {
     "bus_id": "TEST_BUS",
@@ -19,7 +22,7 @@ test_message = {
     "occupancyStatus": "FEW_SEATS_AVAILABLE"       
 }
 
-producer.send(TOPIC, value=str(test_message).encode("utf-8"))
+producer.send(TOPIC, value=test_message)
 producer.flush()
 print(f"Mensagem enviada para o tópico Kafka: {TOPIC}")
 

@@ -5,7 +5,6 @@ admin = KafkaAdminClient(
     bootstrap_servers='kafka:9092',
 )
 topics_list = admin.list_topics()
-# Admin logic
 
 topics = ['bus','van','stop','bus_raw','van_raw','stop_raw']
 

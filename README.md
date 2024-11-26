@@ -148,10 +148,9 @@ If you prefer manual testing, use the following **curl** commands:
 3. [Logstash Documentation](https://www.elastic.co/guide/en/logstash/master/introduction.html)
 4. [Elasticsearch Mappings Docs](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-mapping.html)
 5. [Kafka-Real-Time-Streaming Repository - GitHub](https://github.com/puchki2015/Kafka-Real-Time-Streaming)
-7. [FastAPI Kafka Integration Tutorial](https://github.com/puchki2015/Kafka-Real-Time-Streaming)
-8. [Kafka to Elasticsearch with Python - GitHub](https://github.com/ZianTsabit/kafka-elasticsearch-python)
-9. [Elasticsearch + Logstash + Kibana  - GitHub](https://github.com/shazforiot/Elasticsearch-logstash-Kibana-Docker-Compose)  
-10. [Docker ELK Stack  - GitHub](https://github.com/deviantony/docker-elk)
+6. [Kafka to Elasticsearch with Python - GitHub](https://github.com/ZianTsabit/kafka-elasticsearch-python)
+7. [Elasticsearch + Logstash + Kibana  - GitHub](https://github.com/shazforiot/Elasticsearch-logstash-Kibana-Docker-Compose)  
+8. [Docker ELK Stack - GitHub](https://github.com/deviantony/docker-elk)
 
 ## **Video**
 
@@ -159,6 +158,5 @@ If you prefer manual testing, use the following **curl** commands:
 A 10-minute video walkthrough of the project is available, explaining the architecture, data flow, and usage. 
 
 [**Watch the Video Here**](#)  
-*(Replace with the actual link to the video when available)*
 
 

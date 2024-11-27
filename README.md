@@ -1,4 +1,4 @@
-# **Smart Mobility Data Processing System**
+# **Smart Mobility Data Processing System and DashBoard**
 
 This is a modern data streaming, visualization, and real-time monitoring project designed for smart city solutions. It simulates a public transportation monitoring and analytics system using data from buses, vans, and smart bus stops.
 

@@ -154,13 +154,10 @@ If you prefer manual testing, use the following **curl** commands:
 8. [Docker ELK Stack - GitHub](https://github.com/deviantony/docker-elk)
 
 ## **Video**
-
-https://youtu.be/giVNQp5ZooQ
-
-
 ### **Project Overview Video**
 A 10-minute video walkthrough of the project is available, explaining the architecture, data flow, and usage. 
+[![Everything Is AWESOME](https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard/blob/main/img/video.png?raw=true)](https://youtu.be/giVNQp5ZooQ)
 
-[**Watch the Video Here**](#)  
+
 
 

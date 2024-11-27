@@ -32,6 +32,9 @@ def mock_data(df):
 
     # Add expected wait time to next bus
     df['expected_wait_time_next_bus'] = np.random.normal(loc=5, scale=5, size=len(df))
+    
+    # Generate the number of persons wainting
+    df['waiting_size'] = np.random.exponential(scale=0.4, size=len(df)).astype(int)
 
     return df
 

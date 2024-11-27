@@ -1,0 +1,864 @@
+version: '3.6'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - '2181:2181'
+    networks:
+      - elk
+
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - elk
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  Elasticsearch:
+    image: elasticsearch:7.16.2
+    container_name: elasticsearch
+    restart: always
+    volumes:
+    - elastic_data:/usr/share/elasticsearch/data/
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node    
+    ports:
+    - '9200:9200'
+    - '9300:9300'
+    networks:
+      - elk
+
+  Logstash:
+    image: logstash:7.16.2
+    container_name: logstash
+    restart: always
+    volumes:
+    - ./logstash/:/logstash_dir
+    command: logstash -f /logstash_dir/logstash.conf 
+    depends_on:
+      - Elasticsearch
+    ports:
+      - '9600:9600'
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"    
+    networks:
+      - elk
+
+  Kibana:
+    image: kibana:7.16.2
+    container_name: kibana
+    restart: always       
+    ports:
+      - '5601:5601'
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200  
+    depends_on:
+      - Elasticsearch  
+    networks:
+      - elk
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601/api/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  Conf:                                                                         
+    image: python:3.9
+    container_name: conf                                                              
+    volumes:                                                                    
+      - ./conf:/conf                                                            
+    entrypoint: ["bash", "/conf/configure.sh"]                                  
+    restart: "no"                                                               
+    networks:                                                                   
+      - elk     
+    depends_on:
+      Kibana:
+        condition: service_healthy
+
+  test:
+    build:
+      context: ./tests
+    container_name: test
+    depends_on:
+      - kafka
+    volumes:
+      - ./tests:/app/tests
+    restart: "no"
+    networks:
+      - elk
+      
+  my-fastapi-app:
+    build:
+      context: ./my-fastapi-app
+    container_name: my-fastapi-app
+    ports:
+      - "8000:8000"
+    depends_on:
+      Kibana:
+        condition: service_healthy
+    volumes:
+      - ./my-fastapi-app:/app
+    networks:
+      - elk
+      
+  process_raw_to_cleaned_bus:
+    build:
+      context: ./process_raw_to_cleaned_bus
+    container_name: process_raw_to_cleaned_bus
+    depends_on:
+      - my-fastapi-app
+    volumes:
+      - ./process_raw_to_cleaned_bus:/app
+    networks:
+      - elk
+      
+  process_raw_to_cleaned_stops:
+    build:
+      context: ./process_raw_to_cleaned_stops
+    container_name: process_raw_to_cleaned_stops
+    depends_on:
+      - my-fastapi-app
+    volumes:
+      - ./process_raw_to_cleaned_stops:/app
+    networks:
+      - elk
+      
+  process_raw_to_cleaned_vans:
+    build:
+      context: ./process_raw_to_cleaned_vans
+    container_name: process_raw_to_cleaned_vans
+    depends_on:
+      - my-fastapi-app
+    volumes:
+      - ./process_raw_to_cleaned_vans:/app
+    networks:
+      - elk
+
+volumes:
+  elastic_data: {}
+
+networks:
+  elk:
+sudo firewall-cmd --add-port=9200/tcp --permanent
+sudo firewall-cmd --add-port=5601/tcp --permanent
+sudo firewall-cmd --add-port=9600/tcp --permanent
+sudo firewall-cmd --add-port=9300/tcp --permanent
+sudo firewall-cmd --reload
+# **Smart Mobility Data Processing System**
+
+This is a modern data streaming, visualization, and real-time monitoring project designed for smart city solutions. It simulates a public transportation monitoring and analytics system using data from buses, vans, and smart bus stops.
+
+This project uses Elasticsearch, Logstash, Kibana (ELK Stack), and Kafka, orchestrated with Docker, to create a scalable and modular architecture. The solution enables real-time data ingestion, processing, and visualization, providing critical insights for managing public transportation and urban mobility.
+
+
+## **Architecture**
+![System Architecture](https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard/blob/main/img/architecture.png?raw=true) <!-- Replace with your architecture image -->
+
+### **Components**
+1. **FastAPI**:
+   - Acts as the data producer for the Kafka topics.
+   - Exposes RESTful APIs for data ingestion (`/bus_update`, `/stop_update` and `/van_update`).
+
+2. **Apache Kafka**:
+   - Middleware for real-time data streaming.
+   - Handles topics like `bus_raw`, `van_raw`, `stop_raw`, `bus`, `van` and `stop`.
+
+3. **Logstash**:
+   - Consumes data from Kafka.
+   - Filters and processes data before sending them to Elasticsearch.
+
+4. **Elasticsearch**:
+   - Stores processed data.
+   - Provides a search and analytics engine for querying insights.
+
+5. **Kibana/Custom Dashboard**:
+   - A dashboard for visualizing actionable insights, such as delays or van service requirements.
+
+## **Technologies Used**
+
+- **Programming Language**: Python 3.9+
+- **Data Streaming**: Apache Kafka
+- **Data Processing**: Logstash
+- **Database**: Elasticsearch
+- **Visualization**: Kibana
+- **API Framework**: FastAPI
+- **Containerization**: Docker and Docker Compose
+
+## **Setup**
+
+### **Steps to Run**
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard.git
+   cd ELF-Kafka-Docker-BusStops-SmartCity-DashBoard
+   ```
+
+2. Build and run the Docker containers:
+   ```bash
+   docker-compose up --build
+   ```
+
+3. Access the FastAPI Swagger UI for testing APIs:
+   ```bash
+   URL: http://localhost:8000/docs
+   ```
+
+4. View the processed data in Kibana:
+   ```bash
+   URL: http://localhost:5601
+   ```
+
+## **Tests**
+
+### **Testing Using the `tests` Docker**
+
+The project includes a **test** Docker container to validate each component. To use it:
+
+1. Run the **test** container:
+    ```bash
+    docker run -it test
+    ```
+
+2. Inside the container, execute individual tests:
+    ```bash
+    python test_<TEST_NAME>.py
+    ```
+
+    Examples:
+    - `python test_fastapi_app.py`
+    - `python test_elastic_storing_retrieving.py`
+
+### **Manual Testing with `curl`**
+
+If you prefer manual testing, use the following **curl** commands:
+
+1. **Test Bus Data**:
+    ```bash
+    curl -X POST "http://localhost:8000/bus_update" \
+    -H "Content-Type: application/json" \
+    -d '{
+       "id": "3",
+       "vehicle": {"id": "3"},
+       "trip": {
+          "tripId": "1",
+          "startTime": "00:01:00",
+          "startDate": "20241124",
+          "routeId": "97"
+       },
+       "position": {
+          "latitude": 45.42878,
+          "longitude": -73.59883,
+          "speed": 0
+       },
+       "currentStopSequence": 25,
+       "currentStatus": "STOPPED_AT",
+       "timestamp": 1732426173,
+       "occupancyStatus": "FEW_SEATS_AVAILABLE"
+    }'
+    ```
+
+2. **Test Stop Data**:
+    ```bash
+    curl -X POST "http://localhost:8000/stop_update" \
+    -H "Content-Type: application/json" \
+    -d '{
+       "stop_id": "1",
+       "stop_lat": 45.42888,
+       "stop_lon": -73.59883,
+       "passenger_count": 20,
+       "timestamp": "2024-11-25T15:00:00Z",
+       "temperature": -2,
+       "weather": "Rain",
+       "waiting_size": 0,
+       "percentile_waiting_size": 100,
+       "flood_detected": false,
+       "expected_wait_time_next_bus": 2
+    }'
+    ```
+
+3. **Test Van Data**:
+    ```bash
+    curl -X POST "http://localhost:8000/van_update" \
+    -H "Content-Type: application/json" \
+    -d '{
+       "id": "1",
+       "position": {"latitude": 45.42898, "longitude": -73.59883},
+       "timestamp": "2024-11-25T15:00:00Z"
+    }'
+    ```
+
+## **References**
+
+1. [GTFS Documentation](https://developers.google.com/transit/gtfs)
+2. [Kafka Python Docs](https://kafka-python.readthedocs.io/en/master/)
+3. [Logstash Documentation](https://www.elastic.co/guide/en/logstash/master/introduction.html)
+4. [Elasticsearch Mappings Docs](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-mapping.html)
+5. [Kafka-Real-Time-Streaming Repository - GitHub](https://github.com/puchki2015/Kafka-Real-Time-Streaming)
+6. [Kafka to Elasticsearch with Python - GitHub](https://github.com/ZianTsabit/kafka-elasticsearch-python)
+7. [Elasticsearch + Logstash + Kibana  - GitHub](https://github.com/shazforiot/Elasticsearch-logstash-Kibana-Docker-Compose)  
+8. [Docker ELK Stack - GitHub](https://github.com/deviantony/docker-elk)
+
+## **Video**
+
+### **Project Overview Video**
+A 10-minute video walkthrough of the project is available, explaining the architecture, data flow, and usage. 
+
+[**Watch the Video Here**](#)  
+
+
+from kafka.admin import KafkaAdminClient, NewTopic
+
+# Kafka admin setup
+admin = KafkaAdminClient(
+    bootstrap_servers='kafka:9092',
+)
+topics_list = admin.list_topics()
+
+topics = ['bus','van','stop','bus_raw','van_raw','stop_raw']
+
+for topic in topics:
+    if topic not in topics_list:
+        topics = [NewTopic(name=topic, num_partitions=2, replication_factor=1)]
+        admin.create_topics(new_topics=topics, validate_only=False)
+
+    else:
+        print(topics_list)
+import json
+from fastapi import FastAPI
+from kafka import KafkaProducer
+from datetime import datetime
+
+KAFKA_BROKER = "kafka:9092"
+
+app = FastAPI()
+
+## Config Kafka
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+   
+# Function to save events in a text file
+def save_to_file(data, file_path="vehicle_positions.txt"):
+    with open(file_path, "a") as file:
+        file.write(f"{datetime.now()} - {data}\n")
+    print(f"Saved to {file_path}: {data}")
+
+
+@app.post("/bus_update")
+async def produce_event(event: dict):
+    print(f"Attempting to publish message: {event}")
+    
+    try:
+        producer.send('bus_raw', value=event)
+        producer.flush()
+        print("Message successfully published")
+    except Exception as e:
+        print(f"Failed to publish message: {e}")
+    
+    return {"status": "Message attempted"}
+
+
+@app.post("/stop_update")
+async def stop_update(event: dict):
+    print(f"Attempting to publish message: {event}")
+    
+    try:
+        producer.send('stop_raw', value=event)
+        producer.flush()
+        print("Message successfully published")
+    except Exception as e:
+        print(f"Failed to publish message: {e}")
+    
+    return {"status": "Message attempted"}
+
+
+@app.post("/van_update")
+async def van_update(event: dict):
+    print(f"Attempting to publish message: {event}")
+    
+    try:
+        producer.send('van_raw', value=event)
+        producer.flush()
+        print("Message successfully published")
+    except Exception as e:
+        print(f"Failed to publish message: {e}")
+    
+    return {"status": "Message attempted"}
+from kafka import KafkaConsumer, KafkaProducer
+import json
+
+KAFKA_BROKER = "kafka:9092"
+RAW_TOPIC = "bus_raw"
+PROCESSED_TOPIC = "bus"
+
+
+def process_bus_raw_to_bus_format(data):
+    transformed_data = {
+        "bus_id": data["vehicle"]["id"],
+        "type": "bus",
+        "location": {
+            "lat": data["position"]["latitude"],
+            "lon": data["position"]["longitude"]
+        },
+        "timestamp": data["timestamp"],
+        "occupancyStatus": data["occupancyStatus"]
+    }
+    return transformed_data
+
+
+def main(producer, consumer):
+    print(f"Listening to topic: {RAW_TOPIC}")
+    for data in consumer:
+        try:
+            raw_data = data.value
+            print(f"Received data: {raw_data}")
+
+            transformed_data = process_bus_raw_to_bus_format(raw_data)
+            print(f"Transformed: {transformed_data}")
+
+            producer.send(PROCESSED_TOPIC, value=transformed_data)
+            producer.flush()
+            print(f"Published to topic: {PROCESSED_TOPIC}")
+        except Exception as e:
+            print(f"Error processing: {e}")
+
+
+# Configure consumer
+consumer = KafkaConsumer(
+    RAW_TOPIC,
+    bootstrap_servers=KAFKA_BROKER,
+    value_deserializer=lambda v: json.loads(v.decode('utf-8')),
+    auto_offset_reset='earliest',
+    enable_auto_commit=True,
+    group_id='bus_processor_group'
+)
+
+# Configure producer
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+print('start')
+main(producer, consumer)
+from kafka import KafkaConsumer, KafkaProducer
+import json
+
+KAFKA_BROKER = "kafka:9092"
+RAW_TOPIC = "stop_raw"
+PROCESSED_TOPIC = "stop"
+
+
+def process_stop_raw_to_stop_format(data):
+    transformed_data = {
+        "location": {
+            "lat": data["stop_lat"],
+            "lon": data["stop_lon"]
+        },
+        "temperature": data["temperature"],
+        "weather": data["weather"],
+        "waiting_size": data["waiting_size"],
+        "percentile_waiting_size": data["percentile_waiting_size"],
+        "flood_detected": data["flood_detected"],
+        "expected_wait_time_next_bus": data["expected_wait_time_next_bus"],
+        "type": "stop_station",
+        "stop_id": data["stop_id"]
+    }
+    return transformed_data
+
+
+def main(producer, consumer):
+    print(f"Listening to topic: {RAW_TOPIC}")
+    for data in consumer:
+        try:
+            raw_data = data.value
+            print(f"Received data: {raw_data}")
+
+            transformed_data = process_stop_raw_to_stop_format(raw_data)
+            print(f"Transformed: {transformed_data}")
+
+            producer.send(PROCESSED_TOPIC, value=transformed_data)
+            producer.flush()
+            print(f"Published to topic: {PROCESSED_TOPIC}")
+        except Exception as e:
+            print(f"Error processing: {e}")
+
+
+# Configure consumer
+consumer = KafkaConsumer(
+    RAW_TOPIC,
+    bootstrap_servers=KAFKA_BROKER,
+    value_deserializer=lambda v: json.loads(v.decode('utf-8')),
+    auto_offset_reset='earliest',
+    enable_auto_commit=True,
+    group_id='stop_processor_group'
+)
+
+# Configure producer
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+print('start')
+main(producer, consumer)
+from kafka import KafkaConsumer, KafkaProducer
+import json
+
+KAFKA_BROKER = "kafka:9092"
+RAW_TOPIC = "van_raw"
+PROCESSED_TOPIC = "van"
+
+
+def process_van_raw_to_van_format(data):
+    transformed_data = {
+        "van_id": data["id"],
+        "type": "van",
+        "location": {
+            "lat": data["position"]["latitude"],
+            "lon": data["position"]["longitude"]
+        },
+        "timestamp": data["timestamp"]
+    }
+    return transformed_data
+
+
+def main(producer, consumer):
+    print(f"Listening to topic: {RAW_TOPIC}")
+    for data in consumer:
+        try:
+            raw_data = data.value
+            print(f"Received data: {raw_data}")
+
+            transformed_data = process_van_raw_to_van_format(raw_data)
+            print(f"Transformed: {transformed_data}")
+
+            producer.send(PROCESSED_TOPIC, value=transformed_data)
+            producer.flush()
+            print(f"Published to topic: {PROCESSED_TOPIC}")
+        except Exception as e:
+            print(f"Error processing: {e}")
+
+
+# Configure consumer
+consumer = KafkaConsumer(
+    RAW_TOPIC,
+    bootstrap_servers=KAFKA_BROKER,
+    value_deserializer=lambda v: json.loads(v.decode('utf-8')),
+    auto_offset_reset='earliest',
+    enable_auto_commit=True,
+    group_id='van_processor_group'
+)
+
+# Configure producer
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+print('start')
+main(producer, consumer)
+STM_KEY = 'l709d8ce7cb5514a83ae508a74eb1c13d0'
+from elasticsearch import Elasticsearch
+
+ELASTIC_HOST = "http://elasticsearch:9200"
+INDEX_NAME = "test-index"
+DOC_ID = "1"
+DOC_BODY = {"message": "Test Elasticsearch integration"}
+
+es = Elasticsearch(ELASTIC_HOST)
+
+# Create an index
+es.indices.create(index=INDEX_NAME, ignore=400)
+print(f"Index '{INDEX_NAME}' created.")
+
+# Index a document
+es.index(index=INDEX_NAME, id=DOC_ID, document=DOC_BODY)
+print(f"Document {DOC_ID} indexed.")
+
+# Check if the document has been saved
+response = es.get(index=INDEX_NAME, id=DOC_ID)
+if response["_source"] == DOC_BODY:
+    print(f"Document {DOC_ID} retrieved successfully.")
+else:
+    print(f"Failed to retrieve document {DOC_ID}.")
+
+es.transport.close()
+
+import requests
+
+# URL da API FastAPI
+urls = [
+    "http://my-fastapi-app:8000/bus_update",
+    "http://my-fastapi-app:8000/stop_update",
+    "http://my-fastapi-app:8000/van_update"
+]
+# Payload para a requisição
+payloads = [
+    {
+        "id": "3",
+        "vehicle": {"id": "3"},
+        "trip": {
+            "tripId": "1",
+            "startTime": "00:01:00",
+            "startDate": "20241124",
+            "routeId": "97"
+        },
+        "position": {
+            "latitude": 45.42878,
+            "longitude": -73.59883,
+            "speed": 0
+        },
+        "currentStopSequence": 25,
+        "currentStatus": "STOPPED_AT",
+        "timestamp": 1732426173,
+        "occupancyStatus": "FEW_SEATS_AVAILABLE"
+    },
+    {
+      "stop_id": "1",
+      "stop_lat": 45.42888,
+      "stop_lon": -73.59883,
+      "passenger_count": 20,
+      "timestamp": "2024-11-25T15:00:00Z",
+      "temperature": -2,
+      "weather": "Rain",
+      "waiting_size": 0,
+      "percentile_waiting_size": 100,
+      "flood_detected": False,
+      "expected_wait_time_next_bus": 2
+    },
+    {
+      "id": "1",
+      "position": {"latitude": 45.42898, "longitude": -73.59883},
+      "timestamp": "2024-11-25T15:00:00Z"
+    }
+]
+
+
+def test_fastapi_produce(url, payload):
+    """Testa o endpoint POST /produce"""
+    try:
+        # Send the POST request
+        response = requests.post(url, json=payload)
+        
+        # Check if the response is 200 OK
+        assert response.status_code == 200, f"Status code inesperado: {response.status_code}"
+        print("Resposta da API:", response.json())
+        print("Teste concluído com sucesso!")
+    except Exception as e:
+        print(f"Erro ao testar o endpoint: {e}")
+
+for i in range(3):
+    test_fastapi_produce(urls[i], payloads[i])
+
+
+from kafka import KafkaProducer
+from elasticsearch import Elasticsearch
+import time
+        
+KAFKA_BROKER = "kafka:9092"
+ELASTIC_HOST = "http://elasticsearch:9200"
+TOPIC = "bus"
+INDEX_NAME = "bus"
+    
+# Send mensage direct to Kafka:
+producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER)
+
+test_message = {
+    "bus_id": "TEST_BUS",
+    "location": {"lat": 45.5017, "lon": -73.5673},
+    "timestamp": "2024-11-23T10:00:00Z",
+    "type":"bus",
+    "occupancyStatus": "FEW_SEATS_AVAILABLE"       
+}
+
+producer.send(TOPIC, value=str(test_message).encode("utf-8"))
+producer.flush()
+print(f"Mensagem enviada para o tópico Kafka: {TOPIC}")
+
+# Wait for Logstash to process the message
+time.sleep(10)  
+
+# Check if the changes were reflected in the Elasticsearch database:
+es = Elasticsearch(ELASTIC_HOST)
+result = es.search(index=INDEX_NAME, query={"match": {"bus_id": "TEST_BUS"}})
+hits = result["hits"]["hits"]
+
+if hits:
+    print(f"Mensagem encontrada no Elasticsearch: {hits[0]['_source']}")
+else:
+    print("Mensagem NÃO encontrada no Elasticsearch. Verifique o Logstash.")
+es.transport.close()
+
+from test_stm_info import url_kafka, url_stm get_vehicle_positions, process_vehicle_postions
+
+while True:
+    time.sleep(5)
+    get_vehicle_positions(url_stm)
+    process_vehicle_postions(url_kafka)
+
+
+
+import requests
+from google.transit import gtfs_realtime_pb2
+from google.protobuf.json_format import MessageToDict
+from stm_key import STM_KEY
+
+
+# URLs
+url_kafka = "http://my-fastapi-app:8000/bus_update"
+url_stm = "https://api.stm.info/pub/od/gtfs-rt/ic/v2/vehiclePositions"
+
+headers = {
+    "accept": "application/x-protobuf",
+    "apiKey": STM_KEY
+}
+
+
+def get_vehicle_positions(url_stm):
+    response = requests.get(url_stm, headers=headers)
+    print(response)
+
+    if response.status_code == 200:
+        with open("vehicle_positions.pb", "wb") as f:
+            f.write(response.content)
+        print("Arquivo salvo com sucesso!")
+    else:
+        print(f"Erro ao acessar a API: {response.status_code}")
+
+
+def test_fastapi_produce(url, payload):
+    try:
+        response = requests.post(url, json=payload)
+
+        assert response.status_code == 200, f"Status code inesperado: {response.status_code}"
+        print("Resposta da API:", response.json())
+        print("Teste concluído com sucesso!")
+    except Exception as e:
+        print(f"Erro ao testar o endpoint: {e}")
+
+
+def process_vehicle_postions(url_kafka):
+    # Carregue o arquivo Protobuf
+    feed = gtfs_realtime_pb2.FeedMessage()
+    with open("vehicle_positions.pb", "rb") as f:
+        feed.ParseFromString(f.read())
+
+    # Itere pelos dados e os transforme em algo legível
+    for entity in feed.entity:
+        if entity.HasField("vehicle"):
+            payload = MessageToDict(entity.vehicle)
+            test_fastapi_produce(url_kafka, payload)
+
+
+if __name__ == "__main__":
+    get_vehicle_positions(url_stm)
+    process_vehicle_postions(url_kafka)
+
+
+
+import requests
+import pandas as pd
+import numpy as np
+
+np.random.seed(42)
+
+def mock_data(df):
+    # Generate a random temperature for each stop
+    # stops in north are colder:
+    lat_min = np.min(df['stop_lat'])
+    lat_max = np.max(df['stop_lat'])
+
+    df['temp_mean'] = np.interp(df['stop_lat'], [lat_min, lat_max], [-1, -5])
+    df['temperature'] = np.random.normal(df['temp_mean'], 0.3)
+
+    df = df.drop(columns=['temp_mean'])
+
+    # Generate weather in the point
+    df['weather'] = np.random.choice(['Rain', 'Snow', 'Strong Rain'], size=len(df), p=[0.6, 0.2, 0.2])
+
+    # Generate the number of persons wainting
+    df['waiting_size'] = np.random.exponential(scale=4, size=len(df)).astype(int)
+
+    # Generate the number of persons wainting
+    df['percentile_waiting_size']= np.random.normal(loc=80, scale=30, size=len(df))
+
+    # Add flood detected
+    random_row = np.random.randint(0, len(df))
+    df['flood_detected'] = False
+    df.loc[random_row, 'flood_detected'] = True
+    df.loc[random_row, 'weather'] = 'Strong Rain'
+
+    # Add expected wait time to next bus
+    df['expected_wait_time_next_bus'] = np.random.normal(loc=5, scale=5, size=len(df))
+
+    return df
+
+
+def test_fastapi_produce(url, payload):
+    """Testa o endpoint POST /produce"""
+    try:
+        # Envia a requisição POST
+        response = requests.post(url, json=payload)
+        
+        # Verifica se a resposta é 200 OK
+        assert response.status_code == 200, f"Status code inesperado: {response.status_code}"
+        print("Resposta da API:", response.json())
+        print("Teste concluído com sucesso!")
+    except Exception as e:
+        print(f"Erro ao testar o endpoint: {e}")
+
+
+df_stop = pd.read_csv('./stops.txt')
+df_stop = mock_data(df_stop)
+df_stop = df_stop.drop(columns=['stop_url', 'parent_station'])
+
+# URL da API FastAPI
+url = "http://my-fastapi-app:8000/stop_update"
+
+for i, x in df_stop.iterrows():
+    print(x.to_dict())
+    test_fastapi_produce(url, x.to_dict())
+
+
+from elasticsearch import Elasticsearch
+
+# Configuração do Elasticsearch
+ELASTIC_HOST = "http://elasticsearch:9200"
+
+es = Elasticsearch(ELASTIC_HOST)
+
+response = es.delete_by_query(index="bus", body={"query": {"match_all": {}}}, ignore=[400, 404])
+print("Resposta do Elasticsearch:", response)
+
+response = es.delete_by_query(index="van", body={"query": {"match_all": {}}}, ignore=[400, 404])
+print("Resposta do Elasticsearch:", response)
+
+response = es.delete_by_query(index="stop", body={"query": {"match_all": {}}}, ignore=[400, 404])
+print("Resposta do Elasticsearch:", response)
+
+es.transport.close()
+

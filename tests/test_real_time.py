@@ -1,3 +1,4 @@
+import time
 from test_stm_info import url_kafka, url_stm, get_vehicle_positions, process_vehicle_postions
 
 while True:

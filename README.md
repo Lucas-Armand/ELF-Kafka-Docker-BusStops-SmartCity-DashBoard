@@ -137,7 +137,8 @@ If you prefer manual testing, use the following **curl** commands:
     -d '{
        "id": "1",
        "position": {"latitude": 45.42898, "longitude": -73.59883},
-       "timestamp": "2024-11-25T15:00:00Z"
+       "timestamp": "2024-11-25T15:00:00Z",
+       "type":"van"
     }'
     ```
 
@@ -153,6 +154,9 @@ If you prefer manual testing, use the following **curl** commands:
 8. [Docker ELK Stack - GitHub](https://github.com/deviantony/docker-elk)
 
 ## **Video**
+
+https://youtu.be/giVNQp5ZooQ
+
 
 ### **Project Overview Video**
 A 10-minute video walkthrough of the project is available, explaining the architecture, data flow, and usage. 

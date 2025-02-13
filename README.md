@@ -53,6 +53,14 @@ newgrp docker
 
 # 6. Build and run the containers in detached mode
 docker-compose up -d
+
+# 7. Create Portainer container
+docker run -d --name portainer \
+  -p 9000:9000 \
+  --restart=always \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v portainer_data:/data \
+  portainer/portainer-ce
 ```
 
 ## **Technologies Used**

@@ -32,7 +32,7 @@ This project uses Elasticsearch, Logstash, Kibana (ELK Stack), and Kafka, orches
 Quick Start (e.g., on a new GCP VM)
 
 Use the following commands if you’re setting up on a fresh environment (like Google Cloud Platform, AWS EC2, etc.):
-
+```
 # 1. Install Git
 sudo apt install -y git
 
@@ -53,8 +53,7 @@ newgrp docker
 
 # 6. Build and run the containers in detached mode
 docker-compose up -d
-
-
+```
 
 ## **Technologies Used**
 

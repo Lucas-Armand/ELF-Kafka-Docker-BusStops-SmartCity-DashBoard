@@ -28,6 +28,34 @@ This project uses Elasticsearch, Logstash, Kibana (ELK Stack), and Kafka, orches
 5. **Kibana/Custom Dashboard**:
    - A dashboard for visualizing actionable insights, such as delays or van service requirements.
 
+## **Setup**
+Quick Start (e.g., on a new GCP VM)
+
+Use the following commands if you’re setting up on a fresh environment (like Google Cloud Platform, AWS EC2, etc.):
+
+# 1. Install Git
+sudo apt install -y git
+
+# 2. Clone the Repository
+git clone https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard.git
+cd ELF-Kafka-Docker-BusStops-SmartCity-DashBoard
+
+# 3. Install Docker and Docker Compose
+sudo apt update && sudo apt install -y docker.io docker-compose
+
+# 4. Start and enable the Docker service
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 5. Add your user to the Docker group (so you can run Docker commands without sudo)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 6. Build and run the containers in detached mode
+docker-compose up -d
+
+
+
 ## **Technologies Used**
 
 - **Programming Language**: Python 3.9+

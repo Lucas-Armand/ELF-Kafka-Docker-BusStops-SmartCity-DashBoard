@@ -11,7 +11,6 @@ services:
     networks:
       - elk
 
-
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
@@ -39,13 +38,14 @@ services:
     container_name: elasticsearch
     restart: always
     volumes:
-    - elastic_data:/usr/share/elasticsearch/data/
+      - elastic_data:/usr/share/elasticsearch/data/
     environment:
       ES_JAVA_OPTS: "-Xmx256m -Xms256m"
-      discovery.type: single-node    
+      discovery.type: single-node
+    # Remap 9200 -> 654324
     ports:
-    - '9200:9200'
-    - '9300:9300'
+      - '654324:9200'
+      - '9300:9300'
     networks:
       - elk
 
@@ -54,27 +54,28 @@ services:
     container_name: logstash
     restart: always
     volumes:
-    - ./logstash/:/logstash_dir
-    command: logstash -f /logstash_dir/logstash.conf 
+      - ./logstash/:/logstash_dir
+    command: logstash -f /logstash_dir/logstash.conf
     depends_on:
       - Elasticsearch
     ports:
       - '9600:9600'
     environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"    
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     networks:
       - elk
 
   Kibana:
     image: kibana:7.16.2
     container_name: kibana
-    restart: always       
+    restart: always
+    # Remap 5601 -> 654321
     ports:
-      - '5601:5601'
+      - '654321:5601'
     environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200  
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
     depends_on:
-      - Elasticsearch  
+      - Elasticsearch
     networks:
       - elk
     healthcheck:
@@ -83,15 +84,15 @@ services:
       timeout: 5s
       retries: 10
 
-  Conf:                                                                         
+  Conf:
     image: python:3.9
-    container_name: conf                                                              
-    volumes:                                                                    
-      - ./conf:/conf                                                            
-    entrypoint: ["bash", "/conf/configure.sh"]                                  
-    restart: "no"                                                               
-    networks:                                                                   
-      - elk     
+    container_name: conf
+    volumes:
+      - ./conf:/conf
+    entrypoint: ["bash", "/conf/configure.sh"]
+    restart: "no"
+    networks:
+      - elk
     depends_on:
       Kibana:
         condition: service_healthy
@@ -107,13 +108,14 @@ services:
     restart: "no"
     networks:
       - elk
-      
+
   my-fastapi-app:
     build:
       context: ./my-fastapi-app
     container_name: my-fastapi-app
+    # Remap 8000 -> 654322
     ports:
-      - "8000:8000"
+      - '654322:8000'
     depends_on:
       Kibana:
         condition: service_healthy
@@ -121,7 +123,7 @@ services:
       - ./my-fastapi-app:/app
     networks:
       - elk
-      
+
   process_raw_to_cleaned_bus:
     build:
       context: ./process_raw_to_cleaned_bus
@@ -132,7 +134,7 @@ services:
       - ./process_raw_to_cleaned_bus:/app
     networks:
       - elk
-      
+
   process_raw_to_cleaned_stops:
     build:
       context: ./process_raw_to_cleaned_stops
@@ -143,7 +145,7 @@ services:
       - ./process_raw_to_cleaned_stops:/app
     networks:
       - elk
-      
+
   process_raw_to_cleaned_vans:
     build:
       context: ./process_raw_to_cleaned_vans

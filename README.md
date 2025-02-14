@@ -40,6 +40,10 @@ sudo apt install -y git
 git clone https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard.git
 cd ELF-Kafka-Docker-BusStops-SmartCity-DashBoard
 
+sudo mkdir -p /mnt/docker-volumes/elastic_data
+sudo chown -R 1000:1000 /mnt/docker-volumes/elastic_data  # UID padrão do Elastic
+sudo chmod -R 777 /mnt/docker-volumes/elastic_data
+
 # 3. Install Docker and Docker Compose
 sudo apt update && sudo apt install -y docker.io docker-compose
 

@@ -156,9 +156,14 @@ services:
       - ./process_raw_to_cleaned_vans:/app
     networks:
       - elk
-
+      
 volumes:
-  elastic_data: {}
+  elastic_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/docker-volumes/elastic_data
 
 networks:
   elk:

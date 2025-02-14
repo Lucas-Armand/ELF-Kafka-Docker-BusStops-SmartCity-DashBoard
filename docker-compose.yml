@@ -38,7 +38,7 @@ services:
     container_name: elasticsearch
     restart: always
     volumes:
-      - elastic_data:/usr/share/elasticsearch/data/
+      - /mnt/docker-volumes/elastic_data:/usr/share/elasticsearch/data/
     environment:
       ES_JAVA_OPTS: "-Xmx256m -Xms256m"
       discovery.type: single-node

@@ -41,7 +41,7 @@ services:
     volumes:
     - elastic_data:/usr/share/elasticsearch/data/
     environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ES_JAVA_OPTS: "-Xmx2g -Xms2g"
       discovery.type: single-node    
     ports:
     - '9200:9200'

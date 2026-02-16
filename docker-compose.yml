@@ -40,7 +40,6 @@ services:
     volumes:
       - /mnt/docker-volumes/elastic_data:/usr/share/elasticsearch/data/
     environment:
-      environment:
       ES_JAVA_OPTS: "-Xmx2g -Xms2g"
       discovery.type: single-node    
     ports:

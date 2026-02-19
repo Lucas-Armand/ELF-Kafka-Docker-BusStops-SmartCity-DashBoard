@@ -70,7 +70,7 @@ curl -X PUT "http://elasticsearch:9200/stop_station?pretty" \
 
 
 # Kibana Import API: https://www.elastic.co/guide/en/kibana/current/saved-objects-api-import.html
-curl -X POST "http://localhost:54321/api/saved_objects/_import?overwrite=true" \
+curl -X POST "http://kibana:5601/api/saved_objects/_import?overwrite=true" \
 -H "kbn-xsrf: true" \
 -F file=@/conf/kibana_export_old.ndjson
 

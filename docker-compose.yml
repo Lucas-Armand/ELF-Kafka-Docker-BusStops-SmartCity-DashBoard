@@ -3,7 +3,7 @@ services:
     image: apache/kafka:4.2.0
     container_name: kafka
     ports:
-      - "2909:9092"
+      - "29092:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -20,7 +20,7 @@ services:
     networks:
       - elk
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:19092"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null 2>&1"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -76,20 +76,6 @@ services:
         find config/certs -type d -exec chmod 750 {} \;;
         find config/certs -type f -exec chmod 640 {} \;;
 
-        echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do
-          sleep 10;
-        done;
-
-        echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt \
-          -u "elastic:${ELASTIC_PASSWORD}" \
-          -H "Content-Type: application/json" \
-          https://elasticsearch:9200/_security/user/kibana_system/_password \
-          -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do
-            sleep 10;
-        done;
-
         echo "All done!";
       '
 
@@ -106,7 +92,7 @@ services:
     restart: always
     depends_on:
       setup:
-        condition: service_healthy
+        condition: service_completed_successfully
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - /mnt/docker-volumes/elastic_data:/usr/share/elasticsearch/data/
@@ -142,18 +128,21 @@ services:
       retries: 120
 
   logstash:
-    image: logstash:9.3.0
+    image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
     container_name: logstash
     restart: always
     volumes:
       - ./logstash/:/logstash_dir
+      - certs:/usr/share/logstash/config/certs:ro
     command: logstash -f /logstash_dir/logstash.conf
     depends_on:
-      - Elasticsearch
+      elasticsearch:
+        condition: service_healthy
     ports:
       - '9600:9600'
     environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      - LS_JAVA_OPTS= -Xmx256m -Xms256m
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     networks:
       - elk
 
@@ -170,8 +159,12 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_FLEET_ENABLED=false
     depends_on:
-      - Elasticsearch
+      elasticsearch:
           condition: service_healthy
     networks:
       - elk
@@ -186,12 +179,15 @@ services:
     container_name: conf
     volumes:
       - ./conf:/conf
+      - certs:/certs:ro
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     entrypoint: ["bash", "/conf/configure.sh"]
     restart: "no"
     networks:
       - elk
     depends_on:
-      Kibana:
+      kibana:
         condition: service_healthy
 
   test:
@@ -214,7 +210,7 @@ services:
     ports:
       - '54322:8000'
     depends_on:
-      Kibana:
+      kibana:
         condition: service_healthy
     volumes:
       - ./my-fastapi-app:/app
@@ -255,6 +251,7 @@ services:
       - elk
       
 volumes:
+  certs:
   elastic_data:
     driver: local
     driver_opts:

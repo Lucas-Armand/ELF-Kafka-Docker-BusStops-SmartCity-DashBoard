@@ -182,6 +182,7 @@ services:
       - certs:/certs:ro
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - KIBANA_PASSWORD=${KIBANA_PASSWORD}
     entrypoint: ["bash", "/conf/configure.sh"]
     restart: "no"
     networks:

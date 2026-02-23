@@ -1,0 +1,33 @@
+# infra/nifi/pipelines/pipelines.yaml
+pipelines:
+  - id: stm_vehicle_positions
+    type: gtfsrt_http_to_kafka
+    schedule_seconds: 10
+    http:
+      url: "https://api.stm.info/pub/od/gtfs-rt/ic/v2/vehiclePositions"
+      headers:
+        accept: "application/x-protobuf"
+        apiKey_env: "STM_API_KEY"
+    decode:
+      message_type: "transit_realtime.FeedMessage"
+      recordpath_entities: "/entity"
+      sql_filter: "SELECT * FROM FLOWFILE WHERE vehicle IS NOT NULL"
+    kafka:
+      bootstrap: "kafka:9092"
+      topic: "raw.gtfsrt.vehicle_positions.v1"
+
+  - id: stm_trip_updates
+    type: gtfsrt_http_to_kafka
+    schedule_seconds: 10
+    http:
+      url: "https://api.stm.info/pub/od/gtfs-rt/ic/v2/tripUpdates"
+      headers:
+        accept: "application/x-protobuf"
+        apiKey_env: "STM_API_KEY"
+    decode:
+      message_type: "transit_realtime.FeedMessage"
+      recordpath_entities: "/entity"
+      sql_filter: "SELECT * FROM FLOWFILE WHERE trip_update IS NOT NULL"
+    kafka:
+      bootstrap: "kafka:9092"
+      topic: "raw.gtfsrt.trip_updates.v1"

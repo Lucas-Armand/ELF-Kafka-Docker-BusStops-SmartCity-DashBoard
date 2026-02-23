@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # Deixa pronto pro futuro (vai ficar DOWN até existirem esses serviços)
+  - job_name: gtfsrt-collector
+    static_configs:
+      - targets: ["gtfsrt-collector:8000"]
+
+  - job_name: gtfsrt-normalizer
+    static_configs:
+      - targets: ["gtfsrt-normalizer:8000"]

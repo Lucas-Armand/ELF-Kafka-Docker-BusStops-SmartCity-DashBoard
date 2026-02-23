@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from kafka import KafkaProducer
 from datetime import datetime
 
-KAFKA_BROKER = "kafka:9092"
+KAFKA_BROKER = "kafka:19092"
 
 app = FastAPI()
 

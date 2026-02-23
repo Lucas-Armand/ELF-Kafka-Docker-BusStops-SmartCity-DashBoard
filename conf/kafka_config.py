@@ -2,7 +2,7 @@ from kafka.admin import KafkaAdminClient, NewTopic
 
 # Kafka admin setup
 admin = KafkaAdminClient(
-    bootstrap_servers='kafka:9092',
+    bootstrap_servers='kafka:19092',
 )
 topics_list = admin.list_topics()
 

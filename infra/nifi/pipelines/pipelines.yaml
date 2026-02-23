@@ -13,7 +13,7 @@ pipelines:
       recordpath_entities: "/entity"
       sql_filter: "SELECT * FROM FLOWFILE WHERE vehicle IS NOT NULL"
     kafka:
-      bootstrap: "kafka:9092"
+      bootstrap: "kafka:19092"
       topic: "raw.gtfsrt.vehicle_positions.v1"
 
   - id: stm_trip_updates
@@ -29,5 +29,5 @@ pipelines:
       recordpath_entities: "/entity"
       sql_filter: "SELECT * FROM FLOWFILE WHERE trip_update IS NOT NULL"
     kafka:
-      bootstrap: "kafka:9092"
+      bootstrap: "kafka:19092"
       topic: "raw.gtfsrt.trip_updates.v1"

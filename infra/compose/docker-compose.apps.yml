@@ -1,19 +1,19 @@
 services:
   test:
     build:
-      context: ./tests
+      context: ../tests
     container_name: test
     depends_on:
       - kafka
     volumes:
-      - ./tests:/app/tests
+      - ../tests:/app/tests
     restart: "no"
     networks:
       - elk
 
   my-fastapi-app:
     build:
-      context: ./my-fastapi-app
+      context: ../../services/my-fastapi-app
     container_name: my-fastapi-app
     # Remap 8000 -> 54322
     ports:
@@ -22,6 +22,6 @@ services:
       kibana:
         condition: service_healthy
     volumes:
-      - ./my-fastapi-app:/app
+      - ../../services/my-fastapi-app:/app
     networks:
       - elk

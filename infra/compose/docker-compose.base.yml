@@ -132,7 +132,7 @@ services:
     container_name: logstash
     restart: always
     volumes:
-      - ./logstash/:/logstash_dir
+      - ../logstash/:/logstash_dir
       - certs:/usr/share/logstash/config/certs:ro
     command: logstash -f /logstash_dir/logstash.conf
     depends_on:
@@ -184,14 +184,14 @@ services:
       - SINGLE_USER_CREDENTIALS_PASSWORD=${NIFI_PASSWORD}
     volumes:
       # repositórios (persistência)
-      - ./infra/nifi/state:/opt/nifi/nifi-current/state
-      - ./infra/nifi/database_repository:/opt/nifi/nifi-current/database_repository
-      - ./infra/nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
-      - ./infra/nifi/content_repository:/opt/nifi/nifi-current/content_repository
-      - ./infra/nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository
-      - ./infra/nifi/logs:/opt/nifi/nifi-current/logs
+      - ../nifi/state:/opt/nifi/nifi-current/state
+      - ../nifi/database_repository:/opt/nifi/nifi-current/database_repository
+      - ../nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
+      - ../nifi/content_repository:/opt/nifi/nifi-current/content_repository
+      - ../nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository
+      - ../nifi/logs:/opt/nifi/nifi-current/logs
       # Proto files (somente leitura)
-      - ./infra/nifi/proto:/opt/nifi/proto:ro
+      - ../nifi/proto:/opt/nifi/proto:ro
 
   conf:
     image: python:3.9

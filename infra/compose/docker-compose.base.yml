@@ -183,8 +183,11 @@ services:
       - SINGLE_USER_CREDENTIALS_USERNAME=${NIFI_USERNAME}
       - SINGLE_USER_CREDENTIALS_PASSWORD=${NIFI_PASSWORD}
       - NIFI_REMOTE_INPUT_SECURE=false
+      - NIFI_WEB_HTTPS_HOST=nifi
+      - NIFI_WEB_PROXY_HOST=localhost:8443,nifi:8443
     volumes:
       # repositórios (persistência)
+      #- ../nifi/conf:/opt/nifi/nifi-current/conf
       - ../nifi/state:/opt/nifi/nifi-current/state
       - ../nifi/database_repository:/opt/nifi/nifi-current/database_repository
       - ../nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
@@ -196,11 +199,35 @@ services:
     networks:
       - elk
 
+  nifi-pipeline-apply:
+    build:
+      context: ../nifi/pipelines
+      dockerfile: Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+      nifi:
+        condition: service_started
+    environment:
+      - NIFI_URL=https://nifi:8443/nifi-api
+      - NIFI_USERNAME=${NIFI_USERNAME}
+      - NIFI_PASSWORD=${NIFI_PASSWORD}
+      - NIFI_VERIFY_SSL=false
+      - NIFI_ROOT_PG_ID=root
+      - KAFKA_BOOTSTRAP=kafka:19092
+      - RAW_VEHICLE_POSITIONS_TOPIC=raw.stm.gtfsrt.vehicle_positions.v2
+      - RAW_TRIP_UPDATES_TOPIC=raw.stm.gtfsrt.trip_updates.v2
+      - STM_API_KEY=${STM_API_KEY}
+    command: ["python", "create_pipe_vehicle_positions.py"]
+    networks:
+      - elk
+    restart: "no"
+
   conf:
     image: python:3.9
     container_name: conf
     volumes:
-      - ./conf:/conf
+      - ../conf:/conf
       - certs:/certs:ro
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
@@ -215,12 +242,12 @@ services:
 
   test:
     build:
-      context: ./tests
+      context: ../tests
     container_name: test
     depends_on:
       - kafka
     volumes:
-      - ./tests:/app/tests
+      - ../tests:/app/tests
     restart: "no"
     networks:
       - elk

@@ -13,7 +13,7 @@ services:
 
   my-fastapi-app:
     build:
-      context: ../../services/my-fastapi-app
+      context: ../../legacy/my-fastapi-app
     container_name: my-fastapi-app
     # Remap 8000 -> 54322
     ports:
@@ -22,7 +22,7 @@ services:
       kibana:
         condition: service_healthy
     volumes:
-      - ../../services/my-fastapi-app:/app
+      - ../../legacy/my-fastapi-app:/app
     networks:
       - elk
 

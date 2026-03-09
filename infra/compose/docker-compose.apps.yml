@@ -25,3 +25,15 @@ services:
       - ../../services/my-fastapi-app:/app
     networks:
       - elk
+
+  gtfsrt-normalizer:
+    build:
+      context: ../../services/gtfsrt-normalizer
+    container_name: gtfsrt-normalizer
+    env_file:
+      - ../../services/gtfsrt-normalizer/.env
+    depends_on:
+      - kafka
+    networks:
+      - elk
+    restart: unless-stopped

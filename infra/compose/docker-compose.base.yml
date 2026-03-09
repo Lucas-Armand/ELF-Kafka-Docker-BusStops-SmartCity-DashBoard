@@ -182,6 +182,7 @@ services:
     environment:
       - SINGLE_USER_CREDENTIALS_USERNAME=${NIFI_USERNAME}
       - SINGLE_USER_CREDENTIALS_PASSWORD=${NIFI_PASSWORD}
+      - NIFI_REMOTE_INPUT_SECURE=false
     volumes:
       # repositórios (persistência)
       - ../nifi/state:/opt/nifi/nifi-current/state
@@ -192,6 +193,8 @@ services:
       - ../nifi/logs:/opt/nifi/nifi-current/logs
       # Proto files (somente leitura)
       - ../nifi/proto:/opt/nifi/proto:ro
+    networks:
+      - elk
 
   conf:
     image: python:3.9

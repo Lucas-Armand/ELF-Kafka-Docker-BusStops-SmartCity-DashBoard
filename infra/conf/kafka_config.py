@@ -8,24 +8,24 @@ topics_list = admin.list_topics()
 
 topics = [
     # NiFi publica (raw.*) — definido em infra/nifi/pipelines/pipelines.yaml
-    "raw.gtfsrt.vehicle_positions.v1",
-    "raw.gtfsrt.trip_updates.v1",
+    "raw.stm.gtfsrt.vehicle_positions.v2",
+    "raw.stm.gtfsrt.trip_updates.v2",
 
     # normalizer publica (contrato interno)
-    "normalized.vehicle_positions.v1",
-    "normalized.trip_updates.v1",
+    "normalized.stm.gtfsrt.vehicle_positions.v2",
+    "normalized.stm.getsfrt.trip_updates.v2",
 
     # enricher publica (joins com SQL / device registry / ACL)
-    "enriched.vehicle_positions.v1",
-    "enriched.trip_updates.v1",
+    "enriched.stm.getsfrt.vehicle_positions.v2",
+    "enriched.stm.getsfrt.trip_updates.v2",
 
     # batch/stream processors publicam (KPIs por janela / agregados)
-    "kpi.vehicle_positions.v1",
-    "kpi.trip_updates.v1",
+    "kpi.stm.getsfrt.vehicle_positions.v1",
+    "kpi.stm.getsfrt.trip_updates.v1",
 
     # DLQs (falhas no NiFi / parsing pesado no normalizer)
-    "dlq.gtfsrt.nifi.v1",
-    "dlq.gtfsrt.normalizer.v1"
+    "dlq.stm.gtfsrt.nifi.v1",
+    "dlq.stm.gtfsrt.normalizer.v1"
     ]
 
 for topic in topics:

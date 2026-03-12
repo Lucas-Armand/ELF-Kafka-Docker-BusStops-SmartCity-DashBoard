@@ -86,8 +86,8 @@ services:
 
         echo "Setting file permissions";
         chown -R root:root config/certs;
-        find config/certs -type d -exec chmod 750 {} \;;
-        find config/certs -type f -exec chmod 640 {} \;;
+        find config/certs -type d -exec chmod 755 {} \;;
+        find config/certs -type f -exec chmod 644 {} \;;
 
         echo "All done!";
       '
@@ -169,7 +169,7 @@ services:
       - certs:/usr/share/kibana/config/certs:ro
     environment:
       - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_USERNAME=${ELASTIC_KIBANA_USERNAME}
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
       - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
@@ -243,8 +243,12 @@ services:
       - ../conf:/conf
       - certs:/certs:ro
     environment:
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - KIBANA_PASSWORD=${KIBANA_PASSWORD}
+      - ES_URL=${ES_URL}
+      - KIBANA_URL=${KIBANA_URL}
+      - CA_CERT=${CA_CERT}
     entrypoint: ["bash", "/conf/configure.sh"]
     restart: "no"
     networks:

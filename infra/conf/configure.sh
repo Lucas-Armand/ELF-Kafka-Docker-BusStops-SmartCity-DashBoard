@@ -6,9 +6,6 @@ rm -rf /var/lib/apt/lists/*
 
 : "${ELASTIC_PASSWORD:?ELASTIC_PASSWORD não definido}"
 
-KIBANA_URL="http://kibana:5601"
-ES_URL="https://elasticsearch:9200"
-CA_CERT="/certs/ca/ca.crt"
 AUTH="elastic:${ELASTIC_PASSWORD}"
 
 echo "Waiting for Kibana..."
@@ -27,6 +24,19 @@ curl -s -X POST --cacert "$CA_CERT" \
   -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | cat
 
 echo "Done setting kibana_system password."
+
+
+put_index_template () {
+  local template_name="$1"
+  local body="$2"
+
+  echo "Applying index template: ${template_name}"
+  curl -sS --cacert "$CA_CERT" -u "$AUTH" \
+    -X PUT "${ES_URL}/_index_template/${template_name}" \
+    -H "Content-Type: application/json" \
+    -d "$body"
+  echo
+}
 
 create_index_if_missing () {
   local index="$1"
@@ -48,44 +58,120 @@ create_index_if_missing () {
   fi
 }
 
-BUS_MAPPING='{
-  "mappings": {
-    "properties": {
-      "bus_id": {"type": "keyword"},
-      "location": {"type": "geo_point"},
-      "timestamp": {"type": "date", "format": "strict_date_optional_time||epoch_second||epoch_millis"}
+create_data_view_if_missing () {
+  local title="$1"
+  local name="$2"
+  local time_field="$3"
+
+  echo "Ensuring Kibana data view exists for: ${title}"
+
+  local existing
+  existing=$(curl -sS -u "$AUTH" \
+    -H "kbn-xsrf: true" \
+    "${KIBANA_URL}/api/data_views/data_view" || true)
+
+  if echo "$existing" | grep -q "\"title\":\"${title}\""; then
+    echo "Data view already exists: ${title}"
+    return 0
+  fi
+
+  curl -sS -u "$AUTH" \
+    -X POST "${KIBANA_URL}/api/data_views/data_view" \
+    -H "kbn-xsrf: true" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"data_view\": {
+        \"title\": \"${title}\",
+        \"name\": \"${name}\",
+        \"timeFieldName\": \"${time_field}\"
+      }
+    }"
+  echo
+}
+
+BUS_TEMPLATE='{
+  "index_patterns": ["bus"],
+  "template": {
+    "mappings": {
+      "properties": {
+        "bus_id": { "type": "keyword" },
+        "type": { "type": "keyword" },
+        "timestamp": { "type": "date", "format": "strict_date_optional_time||epoch_second||epoch_millis" },
+        "@timestamp": { "type": "date" },
+        "occupancy_status": { "type": "keyword" },
+        "route_id": { "type": "keyword" },
+        "trip_id": { "type": "keyword" },
+        "stop_id": { "type": "keyword" },
+        "current_status": { "type": "keyword" },
+        "current_stop_sequence": { "type": "integer" },
+        "entity_id": { "type": "keyword" },
+        "entity_type": { "type": "keyword" },
+        "schema_version": { "type": "keyword" },
+        "location": { "type": "geo_point" }
+      }
     }
   }
 }'
 
-VAN_MAPPING='{
-  "mappings": {
-    "properties": {
-      "van_id": {"type": "keyword"},
-      "location": {"type": "geo_point"},
-      "timestamp": {"type": "date", "format": "strict_date_optional_time||epoch_second||epoch_millis"}
+
+STOP_TEMPLATE='{
+  "index_patterns": ["stop_station"],
+  "template": {
+    "mappings": {
+      "properties": {
+        "location": { "type": "geo_point" },
+        "temperature": { "type": "float" },
+        "weather": { "type": "keyword" },
+        "waiting_size": { "type": "float" },
+        "percentile_waiting_size": { "type": "float" },
+        "flood_detected": { "type": "boolean" },
+        "expected_wait_time_next_bus": { "type": "float" },
+        "timestamp": { "type": "date", "format": "strict_date_optional_time||epoch_second||epoch_millis" },
+        "@timestamp": { "type": "date" }
+      }
     }
   }
 }'
 
-STOP_MAPPING='{
+BUS_INDEX_BOOTSTRAP='{
   "mappings": {
     "properties": {
-      "location": {"type": "geo_point"},
-      "temperature": {"type": "float"},
-      "weather": {"type": "keyword"},
-      "waiting_size": {"type": "float"},
-      "percentile_waiting_size": {"type": "float"},
-      "flood_detected": {"type": "boolean"},
-      "expected_wait_time_next_bus": {"type": "float"},
-      "timestamp": {"type": "date", "format": "strict_date_optional_time||epoch_second||epoch_millis"}
+      "bus_id": { "type": "keyword" },
+      "type": { "type": "keyword" },
+      "timestamp": { "type": "date", "format": "strict_date_optional_time||epoch_second||epoch_millis" },
+      "@timestamp": { "type": "date" },
+      "occupancy_status": { "type": "keyword" },
+      "location": { "type": "geo_point" }
     }
   }
 }'
 
-create_index_if_missing "bus" "$BUS_MAPPING"
-create_index_if_missing "van" "$VAN_MAPPING"
-create_index_if_missing "stop_station" "$STOP_MAPPING"
+
+STOP_INDEX_BOOTSTRAP='{
+  "mappings": {
+    "properties": {
+      "location": { "type": "geo_point" },
+      "temperature": { "type": "float" },
+      "weather": { "type": "keyword" },
+      "timestamp": { "type": "date", "format": "strict_date_optional_time||epoch_second||epoch_millis" },
+      "@timestamp": { "type": "date" }
+    }
+  }
+}'
+
+put_index_template "bus-template" "$BUS_TEMPLATE"
+put_index_template "stop-station-template" "$STOP_TEMPLATE"
+
+create_index_if_missing "bus" "$BUS_INDEX_BOOTSTRAP"
+create_index_if_missing "stop_station" "$STOP_INDEX_BOOTSTRAP"
+
+create_data_view_if_missing "bus" "bus" "@timestamp"
+create_data_view_if_missing "stop_station" "stop_station" "@timestamp"
+
+
+
+
+
 
 # Import Kibana saved objects (pode falhar se o arquivo for de major antigo, ex: 7 -> 9)
 if [ -f /conf/kibana_export_old.ndjson ]; then

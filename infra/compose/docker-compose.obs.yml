@@ -1,7 +1,7 @@
 services:
-  prometheus:
+  obsv-prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
+    container_name: obsv-prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -9,9 +9,9 @@ services:
     networks:
       - elk
 
-  grafana:
+  obsv-grafana:
     image: grafana/grafana:latest
-    container_name: grafana
+    container_name: obsv-grafana
     ports:
       - "3000:3000"
     environment:
@@ -24,7 +24,7 @@ services:
     networks:
       - elk
     depends_on:
-      - prometheus
+      - obsv-prometheus
 
 volumes:
   grafana_data:

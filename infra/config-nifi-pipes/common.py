@@ -2,7 +2,6 @@ import time
 import requests
 import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class NiFiClient:
     def __init__(self, base_url: str, username: str, password: str, verify_ssl: bool = False):
@@ -14,20 +13,37 @@ class NiFiClient:
 
     def _authenticate(self, username: str, password: str):
         response = self.session.post(
-            f"{self.base_url}/access/token",
+            f"{self.base_url}/nifi-api/access/token",
             data={"username": username, "password": password},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=30,
         )
-        response.raise_for_status()
-        token = response.text
+
+        if response.status_code not in (200, 201):
+            print("NiFi auth failed", flush=True)
+            print("URL:", f"{self.base_url}/nifi-api/access/token", flush=True)
+            print("Status:", response.status_code, flush=True)
+            print("Headers:", dict(response.headers), flush=True)
+            print("Body:", response.text[:500], flush=True)
+            response.raise_for_status()
+
+        token = response.text.strip()
+        content_type = response.headers.get("Content-Type", "")
+
+        if "html" in content_type.lower() or token.startswith("<"):
+            raise RuntimeError(
+                f"NiFi auth returned HTML instead of token: {token[:300]}"
+            )
+
         self.session.headers.update({"Authorization": f"Bearer {token}"})
 
-    def wait_until_ready(self, timeout_seconds: int = 180, sleep_seconds: int = 5):
+    def wait_until_ready(self, timeout_seconds: int = 100, sleep_seconds: int = 5):
         deadline = time.time() + timeout_seconds
 
         while time.time() < deadline:
             try:
-                response = self.session.get(f"{self.base_url}/flow/about", timeout=10)
+                response = self.session.get(f"{self.base_url}/nifi-api/flow/about", timeout=10)
+                print(response.status_code, response.text[:500], flush=True)
                 if response.status_code == 200:
                     return
             except requests.RequestException:
@@ -46,7 +62,7 @@ class NiFiClient:
             },
         }
         response = self.session.post(
-            f"{self.base_url}/process-groups/{parent_pg_id}/process-groups",
+            f"{self.base_url}/nifi-api/process-groups/{parent_pg_id}/process-groups",
             json=payload,
         )
         response.raise_for_status()
@@ -62,14 +78,14 @@ class NiFiClient:
             },
         }
         response = self.session.post(
-            f"{self.base_url}/process-groups/{pg_id}/processors",
+            f"{self.base_url}/nifi-api/process-groups/{pg_id}/processors",
             json=payload,
         )
         response.raise_for_status()
         return response.json()
 
     def get_processor(self, processor_id: str):
-        response = self.session.get(f"{self.base_url}/processors/{processor_id}")
+        response = self.session.get(f"{self.base_url}/nifi-api/processors/{processor_id}")
         response.raise_for_status()
         return response.json()
 
@@ -84,7 +100,7 @@ class NiFiClient:
             current["component"]["config"]["autoTerminatedRelationships"] = auto_terminated_relationships
 
         response = self.session.put(
-            f"{self.base_url}/processors/{processor_id}",
+            f"{self.base_url}/nifi-api/processors/{processor_id}",
             json=current,
         )
         response.raise_for_status()
@@ -99,7 +115,7 @@ class NiFiClient:
             "disconnectedNodeAcknowledged": False,
         }
         response = self.session.put(
-            f"{self.base_url}/processors/{processor_id}/run-status",
+            f"{self.base_url}/nifi-api/processors/{processor_id}/run-status",
             json=payload,
         )
         response.raise_for_status()
@@ -135,7 +151,7 @@ class NiFiClient:
         }
 
         response = self.session.post(
-            f"{self.base_url}/process-groups/{pg_id}/connections",
+            f"{self.base_url}/nifi-api/process-groups/{pg_id}/connections",
             json=payload,
         )
         response.raise_for_status()
@@ -150,21 +166,21 @@ class NiFiClient:
             },
         }
         response = self.session.post(
-            f"{self.base_url}/process-groups/{pg_id}/controller-services",
+            f"{self.base_url}/nifi-api/process-groups/{pg_id}/controller-services",
             json=payload,
         )
         response.raise_for_status()
         return response.json()
 
     def get_controller_service(self, service_id: str):
-        response = self.session.get(f"{self.base_url}/controller-services/{service_id}")
+        response = self.session.get(f"{self.base_url}/nifi-api/controller-services/{service_id}")
         response.raise_for_status()
         return response.json()
         
         
     def list_controller_services(self, pg_id: str):
         response = self.session.get(
-            f"{self.base_url}/flow/process-groups/{pg_id}/controller-services"
+            f"{self.base_url}/nifi-api/flow/process-groups/{pg_id}/controller-services"
         )
         response.raise_for_status()
         data = response.json()
@@ -201,7 +217,7 @@ class NiFiClient:
         current["component"]["properties"].update(properties)
 
         response = self.session.put(
-            f"{self.base_url}/controller-services/{service_id}",
+            f"{self.base_url}/nifi-api/controller-services/{service_id}",
             json=current,
         )
         response.raise_for_status()
@@ -216,7 +232,7 @@ class NiFiClient:
         }
 
         response = self.session.put(
-            f"{self.base_url}/controller-services/{service_id}/run-status",
+            f"{self.base_url}/nifi-api/controller-services/{service_id}/run-status",
             json=payload,
         )
         response.raise_for_status()

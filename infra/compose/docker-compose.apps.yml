@@ -1,39 +1,12 @@
 services:
-  test:
+  processing-normalizer-gtfsrt:
     build:
-      context: ../tests
-    container_name: test
-    depends_on:
-      - kafka
-    volumes:
-      - ../tests:/app/tests
-    restart: "no"
-    networks:
-      - elk
-
-  my-fastapi-app:
-    build:
-      context: ../../legacy/my-fastapi-app
-    container_name: my-fastapi-app
-    # Remap 8000 -> 54322
-    ports:
-      - '54322:8000'
-    depends_on:
-      kibana:
-        condition: service_healthy
-    volumes:
-      - ../../legacy/my-fastapi-app:/app
-    networks:
-      - elk
-
-  gtfsrt-normalizer:
-    build:
-      context: ../../services/gtfsrt-normalizer
-    container_name: gtfsrt-normalizer
+      context: ../../services/normalizer-gtfsrt
+    container_name: normalizer-gtfsrt
     env_file:
-      - ../../services/gtfsrt-normalizer/.env
+      - ../../services/normalizer-gtfsrt/.env
     depends_on:
-      - kafka
+      - stream-kafka
     networks:
       - elk
     restart: unless-stopped

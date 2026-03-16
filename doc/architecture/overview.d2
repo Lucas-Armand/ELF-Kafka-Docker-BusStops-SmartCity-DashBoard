@@ -1,0 +1,127 @@
+// ------------------------------------------------------------
+// Updated: Modernized Real-time Data Platform (NiFi-first, microservices)
+// ------------------------------------------------------------
+
+title Modernized Real-time Data Platform (NiFi Ingestion + Kafka + ES + Observability)
+
+Ingestion Engine [icon: database, color: blue] {
+  Ingestion Hub [icon: nifi, label: "NiFi (polling / retry / throttling / DLQ / routing)"]
+}
+
+Azure Ingestion [icon: azure, color: gray] {
+  IoT Central [icon: azure-iot-central]
+  Event Hubs [icon: azure-event-hubs, label: "Event Hubs (Kafka endpoint)"]
+  Bridge Connector [icon: link, label: "Bridge / Connector (optional)"]
+}
+
+Streaming Backbone [icon: kafka, color: orange] {
+  Kafka Cluster [icon: kafka, label: "Kafka 4.2.0 (KRaft)"]
+
+  Raw Topics [icon: layers] {
+    raw_gtfsrt_vehicle_positions [icon: file-text, label: "raw.gtfsrt.vehicle_positions.v1"]
+    raw_gtfsrt_trip_updates [icon: file-text, label: "raw.gtfsrt.trip_updates.v1"]
+    raw_iot_telemetry [icon: file-text, label: "raw.iot.telemetry.v1"]
+  }
+
+  Normalized Topics [icon: layers] {
+    normalized_vehicle_positions [icon: file-text, label: "normalized.vehicle_positions.v1"]
+    normalized_trip_updates [icon: file-text, label: "normalized.trip_updates.v1"]
+    normalized_iot_telemetry [icon: file-text, label: "normalized.iot.telemetry.v1"]
+  }
+
+  Enriched Topics [icon: layers] {
+    enriched_vehicle_positions [icon: file-text, label: "enriched.vehicle_positions.v1"]
+    enriched_trip_updates [icon: file-text, label: "enriched.trip_updates.v1"]
+    enriched_iot_telemetry [icon: file-text, label: "enriched.iot.telemetry.v1"]
+  }
+
+  KPI Topics [icon: layers] {
+    kpi_vehicle_positions [icon: file-text, label: "kpi.vehicle_positions.v1"]
+    kpi_trip_updates [icon: file-text, label: "kpi.trip_updates.v1"]
+    kpi_iot_telemetry [icon: file-text, label: "kpi.iot.telemetry.v1"]
+  }
+
+  DLQ Topics [icon: layers] {
+    dlq_gtfsrt_nifi [icon: file-text, label: "dlq.gtfsrt.nifi.v1"]
+    dlq_gtfsrt_normalizer [icon: file-text, label: "dlq.gtfsrt.normalizer.v1"]
+    dlq_iot_nifi [icon: file-text, label: "dlq.iot.nifi.v1"]
+    dlq_iot_normalizer [icon: file-text, label: "dlq.iot.normalizer.v1"]
+  }
+
+  Ref Topics [icon: layers] {
+    ref_devices [icon: file-text, label: "ref.devices.v1"]
+    ref_acl [icon: file-text, label: "ref.acl.v1"]
+    ref_metadata [icon: file-text, label: "ref.metadata.v1"]
+  }
+}
+
+Processing Services [icon: cpu, color: purple] {
+  Normalizer [icon: code, label: "Normalizer (protobuf decode, schema, validation)"]
+  Enricher [icon: merge, label: "Enricher (joins w/ SQL refs, ACL, device registry)"]
+  Stream KPI Processor [icon: activity, label: "Stream Processing (optional)"]
+  Batch Aggregator [icon: clock, label: "Batch Jobs (scheduled KPIs / backfills)"]
+}
+
+SEARCH STACK [icon: hard-drive, color: green] {
+  Logstash [icon: elastic, label: "Logstash (Kafka sink)"]
+  Elasticsearch [icon: elasticsearch, label: "Elasticsearch 9.3.0 (TLS/Auth)"]
+  Kibana [icon: elastic, label: "Kibana (TLS/Auth)"]
+}
+
+Control Plane [icon: database, color: red] {
+  SQL Database [icon: postgresql, label: "SQL Control Plane (devices, ACL, access tables)"]
+  Debezium [icon: kafka, label: "Debezium CDC -> ref.*"]
+}
+
+Observability [icon: activity, color: yellow] {
+  Prometheus [icon: prometheus]
+  Grafana [icon: grafana]
+  Alerting [icon: bell]
+  OpenTelemetry [icon: activity, label: "OpenTelemetry (traces/metrics/log correlation)"]
+}
+External APIs [icon: globe, label: Transit / Smart City APIs]
+External APIs_1 [label: Smart-bus-stops/edge devices, icon: device]
+Agents [color: blue, icon: activity, label: Agents] {
+  Agent_1 [label: Coding Agents, icon: Robot]
+}
+
+
+// ------------------------------------------------------------
+// Connections
+// ------------------------------------------------------------
+
+// Data Source connections
+
+// Ingestion to Kafka
+Ingestion Hub > Kafka Cluster: publish raw.*
+
+// Azure optional path
+IoT Central --> Event Hubs: Data Export [color: gray]
+Event Hubs --> Bridge Connector: consume (Kafka API) [color: gray]
+Bridge Connector > Kafka Cluster: republish to raw.iot.* [color: gray]
+
+// Control Plane CDC
+SQL Database > Debezium: CDC
+Debezium > Kafka Cluster: publish ref.*
+
+// Microservice processing flow (core)
+Kafka Cluster <-> Normalizer: consume raw.* + route failures to dlq.*.normalizer
+Kafka Cluster <-> Enricher: consume normalized.* + read SQL/ref.*
+
+Kafka Cluster <-> Stream KPI Processor: consume enriched.* (optional)
+
+Kafka Cluster <-> Batch Aggregator: consume enriched/normalized (scheduled)
+
+// Indexing / Telemetry storage
+Kafka Cluster > Logstash: consume enriched.* (or normalized.*)
+Logstash > Elasticsearch: index
+Elasticsearch > Kibana: query & visualize
+
+// Observability connections
+Prometheus > Grafana: metrics dashboards
+Prometheus > Alerting: alerts
+OpenTelemetry > Prometheus: export metrics (optional)
+OpenTelemetry > Logstash: logs/traces (optional)
+External APIs_1 > IoT Central
+External APIs > Ingestion Hub
+

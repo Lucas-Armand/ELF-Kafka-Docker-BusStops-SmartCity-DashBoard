@@ -1,226 +1,80 @@
-# **Smart Mobility Data Processing System and DashBoard**
+# BusPas Smart Mobility Streaming Platform
 
-This is a modern data streaming, visualization, and real-time monitoring project designed for smart city solutions. It simulates a public transportation monitoring and analytics system using data from buses, vans, and smart bus stops.
+A modern event-driven data platform for smart mobility and real-time transportation analytics.
 
-This project uses Elasticsearch, Logstash, Kibana (ELK Stack), and Kafka, orchestrated with Docker, to create a scalable and modular architecture. The solution enables real-time data ingestion, processing, and visualization, providing critical insights for managing public transportation and urban mobility.
+This project is evolving from an initial ELK + Kafka prototype into a more modular streaming architecture centered on NiFi-driven ingestion, Kafka as the event backbone, Elasticsearch for search and analytics, and observability components for operational visibility.
 
+## Why this project exists
 
-## **Architecture**
-![System Architecture](https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard/blob/main/img/architecture.png?raw=true) <!-- Replace with your architecture image -->
+Urban mobility systems generate heterogeneous, time-sensitive data from transit feeds, edge devices, and operational control systems.  
+This platform is designed to ingest, normalize, enrich, index, and monitor those streams in a way that is modular, observable, and extensible.
 
-### **Components**
-1. **FastAPI**:
-   - Acts as the data producer for the Kafka topics.
-   - Exposes RESTful APIs for data ingestion (`/bus_update`, `/stop_update` and `/van_update`).
+The goal is not only to visualize transportation events, but to provide an architectural foundation for near real-time smart-city data processing.
 
-2. **Apache Kafka**:
-   - Middleware for real-time data streaming.
-   - Handles topics like `bus_raw`, `van_raw`, `stop_raw`, `bus`, `van` and `stop`.
+## Architecture Overview
+Source of truth: `docs/architecture/overview.d2`
+![Architectural Structure](docs/architecture/overview.png)
 
-3. **Logstash**:
-   - Consumes data from Kafka.
-   - Filters and processes data before sending them to Elasticsearch.
+At a high level, the platform is organized into five architectural layers:
 
-4. **Elasticsearch**:
-   - Stores processed data.
-   - Provides a search and analytics engine for querying insights.
+1. **Ingestion Layer**  
+   NiFi orchestrates polling, retries, throttling, routing, and dead-letter handling for external transit and smart-city feeds.
 
-5. **Kibana/Custom Dashboard**:
-   - A dashboard for visualizing actionable insights, such as delays or van service requirements.
+2. **Streaming Backbone**  
+   Kafka is the central event bus. Data is organized into staged topic families such as:
+   - `raw.*`
+   - `normalized.*`
+   - `enriched.*`
+   - `kpi.*`
+   - `dlq.*`
+   - `ref.*`
 
-## **Setup**
-Quick Start (e.g., on a new GCP VM)
+3. **Processing Services**  
+   Dedicated services handle normalization, validation, enrichment, and KPI-oriented stream or batch processing.
 
-Use the following commands if you’re setting up on a fresh environment (like Google Cloud Platform, AWS EC2, etc.):
-```
-# 1. Install Git
-sudo apt install -y git
+4. **Search and Analytics Layer**  
+   Kafka events can be indexed into Elasticsearch through Logstash and explored in Kibana.
 
-# 2. Clone the Repository
-git clone https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard.git
-cd ELF-Kafka-Docker-BusStops-SmartCity-DashBoard
+5. **Observability and Control Plane**  
+   Prometheus, Grafana, alerting components, and optional OpenTelemetry integration support operational monitoring.  
+   Reference and access-control data can be managed through a SQL control plane and propagated through CDC patterns.
 
-sudo mkdir -p /mnt/docker-volumes/elastic_data
-sudo chown -R 1000:1000 /mnt/docker-volumes/elastic_data  # UID padrão do Elastic
-sudo chmod -R 777 /mnt/docker-volumes/elastic_data
+## Architectural Principles
 
-# 3. Install Docker and Docker Compose
-## Remove old conflicting packages (if any)
-sudo apt remove -y docker docker.io docker-compose containerd containerd.io
-sudo apt autoremove -y
+This project is being shaped by a few core architectural principles:
 
-## Install prerequisites
-sudo apt install -y ca-certificates curl gnupg
+- **Separation of concerns**: ingestion, transport, processing, indexing, and monitoring are decoupled
+- **Event-first design**: Kafka acts as the contract boundary between stages
+- **Progressive enrichment**: data becomes more valuable as it moves from raw to normalized to enriched forms
+- **Operational resilience**: retries, DLQs, and observability are first-class concerns
+- **Extensibility**: new feeds and processors should be added without redesigning the whole platform
 
-## Add Docker’s official GPG key
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
+## End-to-End Data Flow
 
-## Add Docker repository
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+A typical flow looks like this:
 
-## Install Docker Engine + Compose v2 plugin
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io \
-docker-buildx-plugin docker-compose-plugin
+1. NiFi polls or receives external mobility data
+2. Raw events are published into Kafka
+3. Processing services consume and normalize the payloads
+4. Enrichment services combine event streams with reference data
+5. Search-oriented streams are indexed into Elasticsearch
+6. Kibana dashboards and monitoring tools expose system and business visibility
 
-# 4. Start and enable the Docker service
-sudo systemctl start docker
-sudo systemctl enable docker
+## Current Repository Layout
 
-# 5. Add your user to the Docker group (so you can run Docker commands without sudo)
-sudo usermod -aG docker $USER
-newgrp docker
-
-# 6. Build and run the containers in detached mode
-docker-compose up -d
-
-# 7. Create Portainer container
-docker run -d --name portainer \
-  -p 54323:9000 \
-  --restart=always \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v portainer_data:/data \
-  portainer/portainer-ce
-
-```
-
-## **Technologies Used**
-
-- **Programming Language**: Python 3.9+
-- **Data Streaming**: Apache Kafka
-- **Data Processing**: Logstash
-- **Database**: Elasticsearch
-- **Visualization**: Kibana
-- **API Framework**: FastAPI
-- **Containerization**: Docker and Docker Compose
-
-## **Setup**
-
-### **Steps to Run**
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard.git
-   cd ELF-Kafka-Docker-BusStops-SmartCity-DashBoard
-   ```
-
-2. Build and run the Docker containers:
-   ```bash
-   docker-compose up --build
-   ```
-
-3. Access the FastAPI Swagger UI for testing APIs:
-   ```bash
-   URL: http://localhost:8000/docs
-   ```
-
-4. View the processed data in Kibana:
-   ```bash
-   URL: http://localhost:5601
-   ```
-
-## **Tests**
-
-### **Testing Using the `tests` Docker**
-
-The project includes a **test** Docker container to validate each component. To use it:
-
-1. Run the **test** container:
-    ```bash
-    docker-compose run test
-    ```
-
-2. Inside the container, execute individual tests:
-    ```bash
-    python test_<TEST_NAME>.py
-    ```
-
-    Examples:
-    - `python test_fastapi_app.py`
-    - `python test_elastic_storing_retrieving.py`
-
-### **Manual Testing with `curl`**
-
-If you prefer manual testing, use the following **curl** commands:
-
-1. **Test Bus Data**:
-    ```bash
-    curl -X POST "http://localhost:8000/bus_update" \
-    -H "Content-Type: application/json" \
-    -d '{
-       "id": "3",
-       "vehicle": {"id": "3"},
-       "trip": {
-          "tripId": "1",
-          "startTime": "00:01:00",
-          "startDate": "20241124",
-          "routeId": "97"
-       },
-       "position": {
-          "latitude": 45.42878,
-          "longitude": -73.59883,
-          "speed": 0
-       },
-       "currentStopSequence": 25,
-       "currentStatus": "STOPPED_AT",
-       "timestamp": 1732426173,
-       "occupancyStatus": "FEW_SEATS_AVAILABLE"
-    }'
-    ```
-
-2. **Test Stop Data**:
-    ```bash
-    curl -X POST "http://localhost:8000/stop_update" \
-    -H "Content-Type: application/json" \
-    -d '{
-       "stop_id": "1",
-       "stop_lat": 45.42888,
-       "stop_lon": -73.59883,
-       "passenger_count": 20,
-       "timestamp": "2024-11-25T15:00:00Z",
-       "temperature": -2,
-       "weather": "Rain",
-       "waiting_size": 0,
-       "percentile_waiting_size": 100,
-       "flood_detected": false,
-       "expected_wait_time_next_bus": 2
-    }'
-    ```
-
-3. **Test Van Data**:
-    ```bash
-    curl -X POST "http://localhost:8000/van_update" \
-    -H "Content-Type: application/json" \
-    -d '{
-       "id": "1",
-       "position": {"latitude": 45.42898, "longitude": -73.59883},
-       "timestamp": "2024-11-25T15:00:00Z",
-       "type":"van"
-    }'
-    ```
-
-## **References**
-
-1. [GTFS Documentation](https://developers.google.com/transit/gtfs)
-2. [Kafka Python Docs](https://kafka-python.readthedocs.io/en/master/)
-3. [Logstash Documentation](https://www.elastic.co/guide/en/logstash/master/introduction.html)
-4. [Elasticsearch Mappings Docs](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-mapping.html)
-5. [Kafka-Real-Time-Streaming Repository - GitHub](https://github.com/puchki2015/Kafka-Real-Time-Streaming)
-6. [Kafka to Elasticsearch with Python - GitHub](https://github.com/ZianTsabit/kafka-elasticsearch-python)
-7. [Elasticsearch + Logstash + Kibana  - GitHub](https://github.com/shazforiot/Elasticsearch-logstash-Kibana-Docker-Compose)  
-8. [Docker ELK Stack - GitHub](https://github.com/deviantony/docker-elk)
-
-## **Video**
-### **Project Overview Video**
-A 10-minute video walkthrough of the project is available, explaining the architecture, data flow, and usage. 
-[![Everything Is AWESOME](https://github.com/Lucas-Armand/ELF-Kafka-Docker-BusStops-SmartCity-DashBoard/blob/main/img/video.png?raw=true)](https://youtu.be/giVNQp5ZooQ)
-
-
-
-
+```text
+.
+├── infra/
+│   ├── compose/
+│   ├── config-nifi-pipes/
+│   ├── config_elastic/
+│   ├── config_kafka/
+│   ├── config_kibana/
+│   ├── logstash/
+│   ├── nifi/
+│   └── prometheus/
+├── services/
+│   └── normalizer-gtfsrt/
+├── legacy/
+├── doc/
+└── README.md

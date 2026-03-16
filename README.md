@@ -78,6 +78,7 @@ A typical flow looks like this:
 ├── legacy/
 ├── doc/
 └── README.md
+```
 
 
 ## Running the platform
